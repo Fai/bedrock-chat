@@ -93,3 +93,26 @@ class BedrockKnowledgeBaseModel(BaseModel):
     web_crawling_filters: WebCrawlingFiltersModel = WebCrawlingFiltersModel(
         exclude_patterns=[], include_patterns=[]
     )
+
+
+# SQL Knowledge Base Models
+class SqlDatabaseConfigModel(BaseModel):
+    """Redshift database configuration model"""
+
+    workgroup_name: str
+    workgroup_arn: str
+    database_name: str
+    table_name: str
+    field_mapping: dict[str, str]
+    secret_arn: str
+
+
+class SqlKnowledgeBaseModel(BaseModel):
+    """SQL Knowledge Base model for DynamoDB storage"""
+
+    knowledge_base_type: type_kb_resource_type = "SQL"
+    database_config: SqlDatabaseConfigModel
+    search_params: SearchParamsModel
+    embedding_model_arn: str
+    knowledge_base_id: str | None = None
+    data_source_ids: list[str] | None = None
