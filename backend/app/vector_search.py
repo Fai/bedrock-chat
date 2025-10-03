@@ -128,12 +128,11 @@ def _bedrock_knowledge_base_search(bot: BotModel, query: str) -> list[SearchResu
             # Omit overrideSearchType option when the type is "KENDRA"
             omit_override_search_type_parameter(retrieve_parameter)
         elif kb_type == "SQL":
-            # For SQL Knowledge Bases, remove vectorSearchConfiguration
-            # SQL KBs use text-to-SQL conversion automatically
+            # For SQL Knowledge Bases, Bedrock automatically uses text-to-SQL
+            # Keep vectorSearchConfiguration but Bedrock will use SQL instead
             logger.info(f"SQL Knowledge Base detected: {knowledge_base_id}")
-            # Remove vector search configuration for SQL KBs
-            if "retrievalConfiguration" in retrieve_parameter:
-                del retrieve_parameter["retrievalConfiguration"]
+            # SQL KBs ignore vector search config and use text-to-SQL automatically
+            omit_override_search_type_parameter(retrieve_parameter)
 
         # Send retrieve request
         response = agent_client.retrieve(**retrieve_parameter)

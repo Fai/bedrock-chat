@@ -15,7 +15,7 @@ logger.setLevel(logging.INFO)
 
 class KnowledgeToolInput(BaseModel):
     query: str = Field(
-        description="Input suitable for vector search, full text search, and hybrid search. When searching continuously, the query must be designed so that it does not overlap with past contexts."
+        description="Natural language question or query to search the knowledge base. For SQL knowledge bases, use plain English questions (e.g., 'What is the price of Yoga Mat?') - the system will automatically convert to SQL. For vector/text search, use keywords and phrases. When searching continuously, the query must be designed so that it does not overlap with past contexts."
     )
 
 
@@ -47,11 +47,27 @@ def search_knowledge(
 
 
 def create_knowledge_tool(bot: BotModel) -> AgentTool:
-    description = (
-        "Answer a user's question using information. The description is: {}".format(
-            bot.knowledge.__str_in_claude_format__()
+    # Check if this is a SQL Knowledge Base
+    is_sql_kb = False
+    if bot.bedrock_knowledge_base:
+        # Check if it has knowledge_base_type attribute (SqlKnowledgeBaseModel)
+        if hasattr(bot.bedrock_knowledge_base, 'knowledge_base_type'):
+            is_sql_kb = bot.bedrock_knowledge_base.knowledge_base_type == "SQL"  # type: ignore
+
+    kb_info = bot.knowledge.__str_in_claude_format__()
+
+    if is_sql_kb:
+        description = (
+            "Answer a user's question by querying a SQL database. "
+            "IMPORTANT: Use natural language questions only (e.g., 'What is the price of Yoga Mat?'). "
+            "Do NOT generate SQL queries - the system will automatically convert your natural language question to SQL. "
+            "The database contains: {}".format(kb_info)
         )
-    )
+    else:
+        description = (
+            "Answer a user's question using information. The description is: {}".format(kb_info)
+        )
+
     logger.info(f"Creating knowledge base tool with description: {description}")
     return AgentTool(
         name=f"knowledge_base_tool",
