@@ -28,6 +28,10 @@ export LARGE_MESSAGE_BUCKET=bedrockchatstack-largemessagebucketxxx
 export USER_POOL_ID=xxxxxxxxx
 export CLIENT_ID=xxxxxxxxx
 export OPENSEARCH_DOMAIN_ENDPOINT=https://abcdefghijklmnopqrst.aa-region-1.aoss.amazonaws.com
+
+# SQL Knowledge Base Configuration (Optional)
+export BEDROCK_KB_ROLE_ARN=arn:aws:iam::123456789012:role/BedrockKnowledgeBaseRedshiftRole
+export DEFAULT_MODEL_ARN=arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0
 ```
 
 - Configure CDK configration.
