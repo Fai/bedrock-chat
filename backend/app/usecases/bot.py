@@ -143,6 +143,49 @@ def create_new_bot(user: User, bot_input: BotInput) -> BotOutput:
     )
 
     new_bot = BotModel.from_input(bot_input, owner_user_id=user.id, knowledge=knowledge)
+
+    # Handle SQL Knowledge Base creation if specified
+    if bot_input.bedrock_knowledge_base and hasattr(bot_input.bedrock_knowledge_base, 'knowledge_base_type'):
+        if bot_input.bedrock_knowledge_base.knowledge_base_type == "SQL":  # type: ignore
+            from app.repositories.sql_knowledge_base import create_sql_knowledge_base
+            from app.repositories.models.custom_bot_kb import SqlDatabaseConfigModel
+            from app.routes.schemas.bot_kb import SqlKnowledgeBaseInput
+
+            sql_kb_input = bot_input.bedrock_knowledge_base  # type: ignore
+
+            # Convert schema to model
+            sql_config = SqlDatabaseConfigModel(
+                workgroup_name=sql_kb_input.database_config.workgroup_name,
+                workgroup_arn=sql_kb_input.database_config.workgroup_arn,
+                database_name=sql_kb_input.database_config.database_name,
+                table_name=sql_kb_input.database_config.table_name,
+                field_mapping=sql_kb_input.database_config.field_mapping,
+                secret_arn=sql_kb_input.database_config.secret_arn,
+                embedding_model_arn=sql_kb_input.embedding_model_arn,
+            )
+
+            try:
+                # Create SQL Knowledge Base in Bedrock
+                kb_id, data_source_id = create_sql_knowledge_base(
+                    bot_id=bot_input.id,
+                    sql_config=sql_config,
+                    kb_name=f"sql-kb-{bot_input.id}",
+                )
+
+                logger.info(f"Created SQL KB {kb_id} for bot {bot_input.id}")
+
+                # Update bot with actual KB ID
+                if new_bot.bedrock_knowledge_base:
+                    new_bot.bedrock_knowledge_base.knowledge_base_id = kb_id
+                    if data_source_id:
+                        new_bot.bedrock_knowledge_base.data_source_ids = [data_source_id]
+
+            except Exception as e:
+                logger.error(f"Failed to create SQL KB for bot {bot_input.id}: {e}")
+                # Set sync status to FAILED so user knows there was an issue
+                new_bot.sync_status = "FAILED"
+                new_bot.sync_status_reason = f"Failed to create SQL Knowledge Base: {str(e)}"
+
     store_bot(new_bot)
 
     return new_bot.to_output()

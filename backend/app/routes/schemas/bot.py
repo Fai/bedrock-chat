@@ -20,6 +20,7 @@ from app.routes.schemas.bot_guardrails import (
 from app.routes.schemas.bot_kb import (
     BedrockKnowledgeBaseInput,
     BedrockKnowledgeBaseOutput,
+    SqlKnowledgeBaseInput,
 )
 from app.routes.schemas.conversation import type_model_name
 from charset_normalizer.utils import is_punctuation
@@ -213,7 +214,7 @@ class BotInput(BaseSchema):
     display_retrieved_chunks: bool
     prompt_caching_enabled: bool = True
     conversation_quick_starters: list[ConversationQuickStarter] | None
-    bedrock_knowledge_base: BedrockKnowledgeBaseInput | None = None
+    bedrock_knowledge_base: BedrockKnowledgeBaseInput | SqlKnowledgeBaseInput | None = None
     bedrock_guardrails: BedrockGuardrailsInput | None = None
     active_models: ActiveModelsInput  # type: ignore
 
