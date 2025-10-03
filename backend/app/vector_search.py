@@ -122,12 +122,18 @@ def _bedrock_knowledge_base_search(bot: BotModel, query: str) -> list[SearchResu
             knowledge_base_id=knowledge_base_id
         )
         # Check the knowledge base resource type
-        if (
-            knowledge_base_info.knowledge_base.knowledge_base_configuration.type
-            == "KENDRA"
-        ):
+        kb_type = knowledge_base_info.knowledge_base.knowledge_base_configuration.type
+
+        if kb_type == "KENDRA":
             # Omit overrideSearchType option when the type is "KENDRA"
             omit_override_search_type_parameter(retrieve_parameter)
+        elif kb_type == "SQL":
+            # For SQL Knowledge Bases, remove vectorSearchConfiguration
+            # SQL KBs use text-to-SQL conversion automatically
+            logger.info(f"SQL Knowledge Base detected: {knowledge_base_id}")
+            # Remove vector search configuration for SQL KBs
+            if "retrievalConfiguration" in retrieve_parameter:
+                del retrieve_parameter["retrievalConfiguration"]
 
         # Send retrieve request
         response = agent_client.retrieve(**retrieve_parameter)
