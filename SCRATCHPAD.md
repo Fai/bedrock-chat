@@ -236,7 +236,62 @@ BEDROCK_REGION=us-east-1
 
 ---
 
-**Last Updated**: 2025-10-03 21:30 UTC
+## Session Update: 2025-10-03 (Continued)
+
+### Phase 5: Integration with Bot Creation Workflow ✅
+
+**Issue Discovered**: User reported that after deploying and syncing SQL KB, they received error:
+```
+ResourceNotFoundException: Knowledge Base with id FUHF2P3UBQ does not exist
+```
+
+**Root Cause**: Bot creation stored KB ID but never actually created the Bedrock Knowledge Base.
+
+**Solution Implemented**:
+1. **Updated BotInput Schema** (backend/app/routes/schemas/bot.py:217)
+   - Changed `bedrock_knowledge_base` field to accept both types:
+     ```python
+     bedrock_knowledge_base: BedrockKnowledgeBaseInput | SqlKnowledgeBaseInput | None = None
+     ```
+
+2. **Modified create_new_bot()** (backend/app/usecases/bot.py)
+   - Added SQL KB type detection after bot creation
+   - Calls `create_sql_knowledge_base()` for SQL type KBs
+   - Updates bot with actual KB ID from Bedrock
+   - Sets `sync_status = "FAILED"` on errors with reason
+
+3. **Added Lambda Environment Variables** (cdk/lib/constructs/api.ts:272-273)
+   - `BEDROCK_KB_ROLE_ARN`: IAM role for Bedrock → Redshift access (from process.env)
+   - `DEFAULT_MODEL_ARN`: Auto-set to Claude 3.5 Sonnet for the configured Bedrock region
+
+4. **Updated Documentation** (backend/README.md:32-35)
+   - Added SQL KB configuration section
+   - Documented environment variable requirements
+
+**Deployment**: Successfully deployed to AWS with `cdk deploy BedrockChatStack`
+
+**Git Commit**: `3aac237` - feat(integration): integrate SQL KB creation into bot workflow
+
+### Next Steps for User
+
+1. **Set Environment Variable** (if using SQL KB):
+   ```bash
+   export BEDROCK_KB_ROLE_ARN=arn:aws:iam::123456789012:role/BedrockKnowledgeBaseRedshiftRole
+   ```
+   Get the role ARN from SqlDatabase stack CloudFormation output if deployed.
+
+2. **Fix Existing Broken Bot** (Optional):
+   - Either delete and recreate the bot with KB ID `FUHF2P3UBQ`
+   - Or use the `fix_sql_kb.py` script to manually create the KB
+
+3. **Test Integration**:
+   - Create a new bot with SQL KB through the UI
+   - Verify Bedrock KB is actually created in AWS Console
+   - Test querying through chat interface
+
+---
+
+**Last Updated**: 2025-10-03 23:30 UTC
 **Developer**: Claude Code
-**Status**: 🎉 **IMPLEMENTATION COMPLETE (100%)** 🎉
-**Ready For**: Code review, testing, and integration with bot creation UI
+**Status**: 🎉 **IMPLEMENTATION + INTEGRATION COMPLETE (100%)** 🎉
+**Ready For**: Testing with actual SQL Knowledge Base setup
