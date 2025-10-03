@@ -153,38 +153,51 @@ def create_new_bot(user: User, bot_input: BotInput) -> BotOutput:
 
             sql_kb_input = bot_input.bedrock_knowledge_base  # type: ignore
 
-            # Convert schema to model
-            sql_config = SqlDatabaseConfigModel(
-                workgroup_name=sql_kb_input.database_config.workgroup_name,
-                workgroup_arn=sql_kb_input.database_config.workgroup_arn,
-                database_name=sql_kb_input.database_config.database_name,
-                table_name=sql_kb_input.database_config.table_name,
-                field_mapping=sql_kb_input.database_config.field_mapping,
-                secret_arn=sql_kb_input.database_config.secret_arn,
-                embedding_model_arn=sql_kb_input.embedding_model_arn,
-            )
-
-            try:
-                # Create SQL Knowledge Base in Bedrock
-                kb_id, data_source_id = create_sql_knowledge_base(
-                    bot_id=bot_input.id,
-                    sql_config=sql_config,
-                    kb_name=f"sql-kb-{bot_input.id}",
+            # Check if user provided an existing KB ID (external KB integration)
+            if sql_kb_input.exist_knowledge_base_id:
+                logger.info(f"Using existing SQL KB {sql_kb_input.exist_knowledge_base_id} for bot {bot_input.id}")
+                # For existing KB, just use the provided ID and mark as SUCCEEDED
+                # No need to create a new KB or run Step Functions
+                if new_bot.bedrock_knowledge_base:
+                    new_bot.bedrock_knowledge_base.knowledge_base_id = sql_kb_input.exist_knowledge_base_id
+                new_bot.sync_status = "SUCCEEDED"
+                new_bot.sync_status_reason = "Using existing SQL Knowledge Base"
+            else:
+                # Create a new SQL Knowledge Base
+                sql_config = SqlDatabaseConfigModel(
+                    workgroup_name=sql_kb_input.database_config.workgroup_name,
+                    workgroup_arn=sql_kb_input.database_config.workgroup_arn,
+                    database_name=sql_kb_input.database_config.database_name,
+                    table_name=sql_kb_input.database_config.table_name,
+                    field_mapping=sql_kb_input.database_config.field_mapping,
+                    secret_arn=sql_kb_input.database_config.secret_arn,
+                    embedding_model_arn=sql_kb_input.embedding_model_arn,
                 )
 
-                logger.info(f"Created SQL KB {kb_id} for bot {bot_input.id}")
+                try:
+                    # Create SQL Knowledge Base in Bedrock
+                    kb_id, data_source_id = create_sql_knowledge_base(
+                        bot_id=bot_input.id,
+                        sql_config=sql_config,
+                        kb_name=f"sql-kb-{bot_input.id}",
+                    )
 
-                # Update bot with actual KB ID
-                if new_bot.bedrock_knowledge_base:
-                    new_bot.bedrock_knowledge_base.knowledge_base_id = kb_id
-                    if data_source_id:
-                        new_bot.bedrock_knowledge_base.data_source_ids = [data_source_id]
+                    logger.info(f"Created SQL KB {kb_id} for bot {bot_input.id}")
 
-            except Exception as e:
-                logger.error(f"Failed to create SQL KB for bot {bot_input.id}: {e}")
-                # Set sync status to FAILED so user knows there was an issue
-                new_bot.sync_status = "FAILED"
-                new_bot.sync_status_reason = f"Failed to create SQL Knowledge Base: {str(e)}"
+                    # Update bot with actual KB ID
+                    if new_bot.bedrock_knowledge_base:
+                        new_bot.bedrock_knowledge_base.knowledge_base_id = kb_id
+                        if data_source_id:
+                            new_bot.bedrock_knowledge_base.data_source_ids = [data_source_id]
+
+                    # Mark as succeeded since we created the KB synchronously
+                    new_bot.sync_status = "SUCCEEDED"
+
+                except Exception as e:
+                    logger.error(f"Failed to create SQL KB for bot {bot_input.id}: {e}")
+                    # Set sync status to FAILED so user knows there was an issue
+                    new_bot.sync_status = "FAILED"
+                    new_bot.sync_status_reason = f"Failed to create SQL Knowledge Base: {str(e)}"
 
     store_bot(new_bot)
 
