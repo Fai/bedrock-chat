@@ -208,4 +208,24 @@ def _bedrock_knowledge_base_search(bot: BotModel, query: str) -> list[SearchResu
 
 
 def search_related_docs(bot: BotModel, query: str) -> list[SearchResult]:
-    return _bedrock_knowledge_base_search(bot, query)
+    """
+    Search knowledge base - routes to appropriate search method based on KB type.
+
+    For SQL KBs: Uses retrieve_and_generate API (text-to-SQL)
+    For Vector KBs: Uses retrieve API (semantic search)
+    """
+    # Check if this is a SQL Knowledge Base
+    is_sql_kb = False
+    if bot.bedrock_knowledge_base:
+        if hasattr(bot.bedrock_knowledge_base, 'knowledge_base_type'):
+            is_sql_kb = bot.bedrock_knowledge_base.knowledge_base_type == "SQL"  # type: ignore
+
+    if is_sql_kb:
+        # Import and use SQL KB search
+        from app.sql_kb_search import search_sql_knowledge_base
+        logger.info(f"Routing to SQL KB search for query: {query}")
+        return search_sql_knowledge_base(bot, query)  # type: ignore
+    else:
+        # Use standard vector search
+        logger.info(f"Routing to vector search for query: {query}")
+        return _bedrock_knowledge_base_search(bot, query)
