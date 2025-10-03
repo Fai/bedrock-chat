@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 class KnowledgeToolInput(BaseModel):
     query: str = Field(
-        description="Natural language question or query to search the knowledge base. For SQL knowledge bases, use plain English questions (e.g., 'What is the price of Yoga Mat?') - the system will automatically convert to SQL. For vector/text search, use keywords and phrases. When searching continuously, the query must be designed so that it does not overlap with past contexts."
+        description="A natural language question to search the knowledge base. Use plain English only - NEVER generate SQL queries yourself. Examples: 'What is the price of Yoga Mat?', 'Show me product information'. The system handles all technical query conversion automatically."
     )
 
 
@@ -65,10 +65,11 @@ def create_knowledge_tool(bot: BotModel) -> AgentTool:
 
     if is_sql_kb:
         description = (
-            "Answer a user's question by querying a SQL database. "
-            "IMPORTANT: Use natural language questions only (e.g., 'What is the price of Yoga Mat?'). "
-            "Do NOT generate SQL queries - the system will automatically convert your natural language question to SQL. "
-            "The database contains: {}".format(kb_info)
+            "Search a database to answer the user's question. "
+            "CRITICAL INSTRUCTION: You must provide the query as a NATURAL LANGUAGE QUESTION in plain English. "
+            "NEVER write SQL code - the query parameter expects human-readable questions like 'What is the price of Yoga Mat?'. "
+            "The system automatically converts your natural language to SQL and executes it. "
+            "Database information: {}".format(kb_info)
         )
     else:
         description = (
