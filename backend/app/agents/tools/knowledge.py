@@ -61,22 +61,26 @@ def create_knowledge_tool(bot: BotModel) -> AgentTool:
         if hasattr(bot.bedrock_knowledge_base, 'knowledge_base_type'):
             is_sql_kb = bot.bedrock_knowledge_base.knowledge_base_type == "SQL"  # type: ignore
 
+    logger.info(f"Creating knowledge tool - SQL KB: {is_sql_kb}, Has KB: {bot.bedrock_knowledge_base is not None}")
+
     kb_info = bot.knowledge.__str_in_claude_format__()
 
     if is_sql_kb:
         description = (
-            "Search a database to answer the user's question. "
-            "CRITICAL INSTRUCTION: You must provide the query as a NATURAL LANGUAGE QUESTION in plain English. "
-            "NEVER write SQL code - the query parameter expects human-readable questions like 'What is the price of Yoga Mat?'. "
-            "The system automatically converts your natural language to SQL and executes it. "
-            "Database information: {}".format(kb_info)
+            "Retrieve information to answer the user's question. "
+            "IMPORTANT: Provide your query as a simple natural language question in plain English. "
+            "Example: 'What is the price of Yoga Mat?' or 'Air Fryer product information'. "
+            "DO NOT use technical syntax - just ask the question naturally. "
+            "Available information: {}".format(kb_info)
         )
+        logger.info("Using SQL KB tool description (natural language queries)")
     else:
         description = (
             "Answer a user's question using information. The description is: {}".format(kb_info)
         )
+        logger.info("Using vector search tool description")
 
-    logger.info(f"Creating knowledge base tool with description: {description}")
+    logger.info(f"Knowledge base tool description: {description}")
     return AgentTool(
         name=f"knowledge_base_tool",
         description=description,
