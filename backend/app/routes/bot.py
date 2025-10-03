@@ -22,6 +22,13 @@ from app.routes.schemas.bot import (
     Knowledge,
     PlainTool,
 )
+from app.routes.schemas.bot_kb import (
+    SqlKnowledgeBaseInput,
+    SqlKnowledgeBaseOutput,
+    KnowledgeBaseStatusOutput,
+    SqlQueryInput,
+    SqlQueryOutput,
+)
 from app.routes.schemas.conversation import type_model_name
 from app.usecases.bot import (
     create_new_bot,
@@ -176,3 +183,151 @@ def get_bot_available_tools(request: Request, bot_id: str):
         PlainTool(tool_type="plain", name=tool.name, description=tool.description)
         for tool in tools
     ]
+
+
+# SQL Knowledge Base Endpoints
+@router.post("/bot/{bot_id}/knowledge-base/sql", response_model=SqlKnowledgeBaseOutput)
+def create_sql_knowledge_base_endpoint(
+    request: Request,
+    bot_id: str,
+    sql_kb_input: SqlKnowledgeBaseInput,
+):
+    """Create SQL Knowledge Base for bot with Redshift data source."""
+    from app.repositories.sql_knowledge_base import create_sql_knowledge_base
+    from app.repositories.models.custom_bot_kb import SqlDatabaseConfigModel
+
+    current_user: User = request.state.current_user
+
+    # Verify bot ownership
+    bot = find_bot_by_id(bot_id)
+    if not bot.is_owned_by_user(current_user):
+        raise PermissionError("The bot is not owned by the user.")
+
+    # Convert schema to model
+    sql_config = SqlDatabaseConfigModel(
+        workgroup_name=sql_kb_input.database_config.workgroup_name,
+        workgroup_arn=sql_kb_input.database_config.workgroup_arn,
+        database_name=sql_kb_input.database_config.database_name,
+        table_name=sql_kb_input.database_config.table_name,
+        field_mapping=sql_kb_input.database_config.field_mapping,
+        secret_arn=sql_kb_input.database_config.secret_arn,
+        embedding_model_arn=sql_kb_input.embedding_model_arn,
+    )
+
+    # Create SQL Knowledge Base
+    kb_id, data_source_id = create_sql_knowledge_base(
+        bot_id=bot_id,
+        sql_config=sql_config,
+        kb_name=f"sql-kb-{bot_id}",
+    )
+
+    logger.info(f"Created SQL KB {kb_id} for bot {bot_id}")
+
+    # Return output
+    return SqlKnowledgeBaseOutput(
+        knowledge_base_type="SQL",
+        database_config=sql_kb_input.database_config,
+        search_params=sql_kb_input.search_params,
+        embedding_model_arn=sql_kb_input.embedding_model_arn,
+        knowledge_base_id=kb_id,
+        data_source_ids=[data_source_id] if data_source_id else [],
+        status="CREATING",
+    )
+
+
+@router.get(
+    "/bot/{bot_id}/knowledge-base/status", response_model=KnowledgeBaseStatusOutput
+)
+def get_knowledge_base_status(request: Request, bot_id: str, knowledge_base_id: str):
+    """Get ingestion job status for SQL Knowledge Base."""
+    from app.repositories.sql_knowledge_base import get_ingestion_job_status
+
+    current_user: User = request.state.current_user
+
+    # Verify bot ownership
+    bot = find_bot_by_id(bot_id)
+    if not bot.is_owned_by_user(current_user):
+        raise PermissionError("The bot is not owned by the user.")
+
+    # Get data source ID from bot knowledge base configuration
+    # Note: In a full implementation, this should be stored in DynamoDB with the bot
+    # For now, we'll need to list data sources to get the ID
+    from app.utils import get_bedrock_agent_client
+
+    client = get_bedrock_agent_client()
+    data_sources = client.list_data_sources(knowledgeBaseId=knowledge_base_id)
+    data_source_id = None
+    if data_sources.get("dataSourceSummaries"):
+        data_source_id = data_sources["dataSourceSummaries"][0]["dataSourceId"]
+
+    if not data_source_id:
+        return KnowledgeBaseStatusOutput(
+            knowledge_base_id=knowledge_base_id,
+            status="ACTIVE",
+            ingestion_job_id=None,
+            ingestion_job_status=None,
+        )
+
+    # Get ingestion status
+    status_info = get_ingestion_job_status(knowledge_base_id, data_source_id)
+
+    return KnowledgeBaseStatusOutput(
+        knowledge_base_id=knowledge_base_id,
+        status=status_info.get("status", "UNKNOWN"),
+        ingestion_job_id=status_info.get("ingestion_job_id"),
+        ingestion_job_status=status_info.get("ingestion_job_status"),
+        error_message=status_info.get("error"),
+    )
+
+
+@router.post("/bot/{bot_id}/knowledge-base/query", response_model=SqlQueryOutput)
+def query_knowledge_base(
+    request: Request,
+    bot_id: str,
+    query_input: SqlQueryInput,
+    knowledge_base_id: str,
+):
+    """Query SQL Knowledge Base with natural language."""
+    from app.repositories.sql_knowledge_base import query_sql_knowledge_base
+
+    current_user: User = request.state.current_user
+
+    # Verify bot ownership
+    bot = find_bot_by_id(bot_id)
+    if not bot.is_owned_by_user(current_user):
+        raise PermissionError("The bot is not owned by the user.")
+
+    # Query the knowledge base
+    result = query_sql_knowledge_base(
+        knowledge_base_id=knowledge_base_id,
+        query=query_input.query,
+        user_id=current_user.id,
+        max_results=query_input.max_results,
+    )
+
+    logger.info(f"Queried SQL KB {knowledge_base_id} for bot {bot_id}")
+
+    return result
+
+
+@router.delete("/bot/{bot_id}/knowledge-base")
+def delete_knowledge_base(request: Request, bot_id: str, knowledge_base_id: str):
+    """Delete SQL Knowledge Base."""
+    from app.repositories.sql_knowledge_base import delete_sql_knowledge_base
+
+    current_user: User = request.state.current_user
+
+    # Verify bot ownership
+    bot = find_bot_by_id(bot_id)
+    if not bot.is_owned_by_user(current_user):
+        raise PermissionError("The bot is not owned by the user.")
+
+    # Delete the knowledge base
+    success = delete_sql_knowledge_base(knowledge_base_id)
+
+    if success:
+        logger.info(f"Deleted SQL KB {knowledge_base_id} for bot {bot_id}")
+        return {"success": True, "message": f"Knowledge Base {knowledge_base_id} deleted successfully"}
+    else:
+        logger.error(f"Failed to delete SQL KB {knowledge_base_id}")
+        return {"success": False, "message": f"Failed to delete Knowledge Base {knowledge_base_id}"}
