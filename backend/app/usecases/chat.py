@@ -56,6 +56,8 @@ from app.vector_search import (
     search_result_to_related_document,
     to_guardrails_grounding_source,
 )
+from app.sql_kb_search import search_sql_knowledge_base
+from app.kb_utils import detect_kb_type
 from ulid import ULID
 
 logger = logging.getLogger(__name__)
@@ -271,8 +273,18 @@ def chat(
                         }
                     )
 
-                search_results = search_related_docs(bot=bot, query=content.body)
-                logger.info(f"Search results from vector store: {search_results}")
+                # Detect KB type and route to appropriate search method
+                kb_type = detect_kb_type(bot)
+                logger.info(f"RAG mode - Detected KB type: {kb_type}")
+
+                if kb_type == "SQL":
+                    logger.info("RAG mode - Using SQL KB search")
+                    search_results = search_sql_knowledge_base(bot=bot, query=content.body)  # type: ignore
+                else:
+                    logger.info("RAG mode - Using vector search")
+                    search_results = search_related_docs(bot=bot, query=content.body)
+
+                logger.info(f"Search results: {search_results}")
 
                 if on_tool_result:
                     on_tool_result(

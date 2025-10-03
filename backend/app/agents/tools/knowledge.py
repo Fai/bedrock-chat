@@ -6,6 +6,7 @@ from app.repositories.models.custom_bot import BotModel
 from app.routes.schemas.conversation import type_model_name
 from app.vector_search import search_related_docs
 from app.sql_kb_search import search_sql_knowledge_base
+from app.kb_utils import detect_kb_type
 
 from pydantic import BaseModel, Field
 
@@ -29,18 +30,16 @@ def search_knowledge(
     logger.info(f"Running AnswerWithKnowledgeTool with query: {query}")
 
     try:
-        # Check if this is a SQL Knowledge Base
-        is_sql_kb = False
-        if bot.bedrock_knowledge_base:
-            if hasattr(bot.bedrock_knowledge_base, 'knowledge_base_type'):
-                is_sql_kb = bot.bedrock_knowledge_base.knowledge_base_type == "SQL"  # type: ignore
+        # Detect KB type once
+        kb_type = detect_kb_type(bot)
+        logger.info(f"Detected KB type: {kb_type}")
 
-        # Use appropriate search method based on KB type
-        if is_sql_kb:
-            logger.info("Using SQL Knowledge Base search (retrieve_and_generate)")
+        # Route directly to appropriate search method
+        if kb_type == "SQL":
+            logger.info("Routing to SQL KB search (retrieve_and_generate)")
             search_results = search_sql_knowledge_base(bot, query=query)
         else:
-            logger.info("Using vector/hybrid search (retrieve)")
+            logger.info("Routing to vector search (retrieve)")
             search_results = search_related_docs(bot, query=query)
 
         return search_results

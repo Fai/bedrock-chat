@@ -190,6 +190,23 @@ def create_new_bot(user: User, bot_input: BotInput) -> BotOutput:
                         if data_source_id:
                             new_bot.bedrock_knowledge_base.data_source_ids = [data_source_id]
 
+                    # Auto-sync schema from Redshift to KB
+                    try:
+                        from app.sql_kb_schema_sync import sync_sql_kb_schema
+                        logger.info(f"Auto-syncing schema for SQL KB {kb_id}")
+                        sync_sql_kb_schema(
+                            knowledge_base_id=kb_id,
+                            workgroup_name=sql_config.workgroup_name,
+                            database=sql_config.database_name,
+                            schema="public",  # Could be made configurable
+                            region=os.environ.get("BEDROCK_REGION", "us-east-1")
+                        )
+                        logger.info(f"Schema sync completed for SQL KB {kb_id}")
+                    except Exception as sync_error:
+                        logger.warning(f"Schema sync failed for SQL KB {kb_id}: {sync_error}")
+                        # Don't fail bot creation if schema sync fails
+                        # User can manually sync later
+
                     # Mark as succeeded since we created the KB synchronously
                     new_bot.sync_status = "SUCCEEDED"
 
