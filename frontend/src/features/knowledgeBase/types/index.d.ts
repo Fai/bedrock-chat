@@ -81,3 +81,65 @@ export type SearchParams = {
 };
 
 export type SearchType = 'hybrid' | 'semantic';
+
+// SQL Knowledge Base Types
+export type KnowledgeBaseResourceType = 'VECTOR' | 'SQL';
+
+export type SqlDatabaseConfig = {
+  workgroupName: string;
+  workgroupArn: string;
+  databaseName: string;
+  tableName: string;
+  fieldMapping: {
+    id: string;
+    content: string;
+    metadata: string;
+  };
+  secretArn: string;
+};
+
+export type SqlKnowledgeBase = {
+  knowledgeBaseType: 'SQL';
+  knowledgeBaseId: string | null;
+  dataSourceIds?: string[];
+  databaseConfig: SqlDatabaseConfig;
+  searchParams: SearchParams;
+  embeddingModelArn: string;
+};
+
+export type KnowledgeBaseStatus =
+  | 'CREATING'
+  | 'ACTIVE'
+  | 'DELETING'
+  | 'UPDATING'
+  | 'FAILED'
+  | 'NOT_STARTED'
+  | 'UNKNOWN';
+
+export type IngestionJobStatus =
+  | 'STARTING'
+  | 'IN_PROGRESS'
+  | 'COMPLETE'
+  | 'FAILED';
+
+export type KnowledgeBaseStatusInfo = {
+  knowledgeBaseId: string;
+  status: KnowledgeBaseStatus;
+  ingestionJobId?: string | null;
+  ingestionJobStatus?: IngestionJobStatus | null;
+  errorMessage?: string;
+};
+
+export type SqlQueryResult = {
+  answer: string;
+  citations?: Array<{
+    retrievedReferences?: Array<{
+      metadata?: Record<string, unknown>;
+      content?: {
+        text?: string;
+      };
+    }>;
+  }> | null;
+  sqlQuery?: string | null;
+  results?: Array<Record<string, unknown>> | null;
+};
