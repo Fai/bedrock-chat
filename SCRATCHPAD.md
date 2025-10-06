@@ -368,7 +368,98 @@ After Optimization:
 
 ---
 
-**Last Updated**: 2025-10-06 10:30 UTC
+## Session Update: 2025-10-06 (S3 Vector Knowledge Base Implementation)
+
+### Phase 7: S3 Vector Storage Implementation ✅
+
+**New Feature**: S3 Vectors as cost-effective alternative to OpenSearch Serverless
+
+**Research Findings**:
+- Amazon S3 Vectors (Preview): Native vector storage in S3
+- Available regions: US East (VA, OH), US West (OR), EU (Frankfurt), AP (Sydney)
+- Cost: ~$0.023/GB/month (99% cheaper than OpenSearch Serverless)
+- Latency: Sub-second (vs sub-millisecond for OpenSearch)
+- Best for: Development, large datasets, cost-sensitive workloads
+
+**Implementation Completed** (Commit: `30574ac`):
+
+1. **Backend Schema Changes**:
+   - Added `type_kb_storage_type` enum: `OPENSEARCH_SERVERLESS` | `S3_VECTOR`
+   - Updated `BedrockKnowledgeBaseInput/Output` with `storage_type` field
+   - Made `open_search` field optional (not needed for S3 vectors)
+
+2. **New Repository Module** (`backend/app/repositories/s3_vector_kb.py`):
+   - `create_s3_vector_knowledge_base()`: Quick Create with auto-provisioned vector bucket
+   - `get_s3_vector_kb_info()`: Retrieve KB details
+   - `delete_s3_vector_knowledge_base()`: KB cleanup
+   - Helper functions for embeddings model ARNs, dimensions, chunking config
+
+3. **Bot Creation Integration** (`backend/app/usecases/bot.py:219-267`):
+   - Detects `storage_type=S3_VECTOR` in KB config
+   - Creates S3 Vector KB via Quick Create (Bedrock auto-provisions vector bucket)
+   - Configures S3 data source with user document prefix
+   - Starts automatic ingestion job
+   - Sets sync_status to SUCCEEDED on completion
+
+4. **Supported Features**:
+   - **Embeddings**: Titan V2 (1024 dims), Cohere Multilingual V3
+   - **Chunking**: Default, Fixed Size, Hierarchical, Semantic, None
+   - **Parsing**: Claude 3.5 Sonnet, Claude 3 Haiku/Sonnet, or disabled
+   - **Data Isolation**: Per-bot S3 prefixes (`documents/{user_id}/{bot_id}/`)
+
+**Technical Specifications**:
+```python
+# Bedrock API call for S3 Vector KB
+storageConfiguration = {
+    "type": "S3",  # Triggers Quick Create
+    # Bedrock auto-creates vector bucket and index
+}
+
+# Embedding configuration
+embeddingModelConfiguration = {
+    "bedrockEmbeddingModelConfiguration": {
+        "dimensions": 1024  # Titan V2
+    }
+}
+```
+
+**Cost Comparison Table**:
+| Metric | OpenSearch Serverless | S3 Vectors | Savings |
+|--------|----------------------|------------|---------|
+| Storage (1M vectors, 4GB) | $0.24/GB = $0.96/mo | $0.023/GB = $0.092/mo | 90% |
+| OCU Cost | $87.60/mo (0.5 OCU) | $0 | 100% |
+| Query Cost (100K) | Included in OCU | $0.04/mo | - |
+| **Total** | **$88.56/mo** | **$0.13/mo** | **99.85%** |
+
+**Limitations**:
+- Preview feature (subject to breaking changes)
+- 500 token chunking limit (vs 8K for OpenSearch)
+- Semantic search only (no hybrid)
+- Sub-second latency (vs sub-millisecond)
+- 40KB metadata per vector max
+
+**Decision Rationale**:
+- Keep both storage options for flexibility
+- S3 Vectors: Dev/test, large datasets, cost optimization
+- OpenSearch: Production, low-latency, hybrid search
+
+**Git Status**:
+- **Branch**: `feature/s3-vector`
+- **Commit**: `30574ac` - feat(s3-vector): implement S3 Vector Knowledge Base support
+- **Files Changed**: 10 files, 813 insertions
+- **New Files**:
+  - `backend/app/repositories/s3_vector_kb.py` (369 lines)
+  - `SCRATCHPAD-S3-VECTOR.md` (detailed technical doc)
+
+**Testing Notes**:
+- Requires Bedrock region with S3 Vectors preview (us-east-1 recommended)
+- Set `BEDROCK_KB_ROLE_ARN` with S3 access permissions
+- Test with storage_type="S3_VECTOR" in bot creation API
+- Verify auto-created vector bucket in S3 console
+
+---
+
+**Last Updated**: 2025-10-06 11:15 UTC
 **Developer**: Claude Code
-**Status**: 🎯 **COST OPTIMIZATION COMPLETE + ARCHITECTURE REVIEWED** 🎯
-**Next Phase**: Migration tooling and security hardening (pending POC direction)
+**Status**: 🚀 **S3 VECTOR KB IMPLEMENTATION COMPLETE** 🚀
+**Next**: Frontend UI toggle for storage type selection (OpenSearch vs S3 Vector)
