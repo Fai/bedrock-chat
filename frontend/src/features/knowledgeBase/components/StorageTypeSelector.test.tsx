@@ -202,7 +202,7 @@ describe('StorageTypeSelector', () => {
   });
 
   it('displays correct disabled reason for unsupported region', () => {
-    const { container } = render(
+    render(
       <StorageTypeSelector {...defaultProps} bedrockRegion="ap-south-1" />
     );
 
