@@ -10,7 +10,7 @@ const LazyOutputText: React.FC<Props> = (props) => {
   const [displayText, setDisplayText] = useState('');
 
   useEffect(() => {
-    const functions: NodeJS.Timeout[] = [];
+    const functions: ReturnType<typeof setTimeout>[] = [];
     props.text.split('').forEach((_, idx) => {
       functions.push(
         setTimeout(() => {

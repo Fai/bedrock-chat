@@ -87,7 +87,7 @@ const useSqlKnowledgeBaseApi = () => {
      * Delete SQL Knowledge Base
      */
     deleteKnowledgeBase: (botId: string, knowledgeBaseId: string) => {
-      return http.del<DeleteKnowledgeBaseResponse>(
+      return http.delete<DeleteKnowledgeBaseResponse>(
         `bot/${botId}/knowledge-base?knowledge_base_id=${knowledgeBaseId}`
       );
     },

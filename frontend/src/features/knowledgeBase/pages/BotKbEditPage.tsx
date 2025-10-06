@@ -49,7 +49,7 @@ import {
   OPENSEARCH_ANALYZER,
   DEFAULT_SEARCH_CONFIG,
   DEFAULT_OPENSEARCH_ANALYZER,
-  DEFAULT_S3_VECTOR_KNOWLEDGEBASE,
+  // DEFAULT_S3_VECTOR_KNOWLEDGEBASE, // Available for future use
 } from '../constants';
 import {
   GUARDRAILS_FILTERS_THRESHOLD,
@@ -562,7 +562,7 @@ const BotKbEditPage: React.FC = () => {
             );
           }
 
-          setOpenSearchParams(bot.bedrockKnowledgeBase!.openSearch);
+          setOpenSearchParams(bot.bedrockKnowledgeBase!.openSearch || { analyzer: null });
           setSearchParams(bot.bedrockKnowledgeBase!.searchParams);
           setGuardrailArn(bot.bedrockGuardrails.guardrailArn);
           setGuardrailVersion(
@@ -2024,7 +2024,6 @@ const BotKbEditPage: React.FC = () => {
                     <StorageTypeSelector
                       selectedStorageType={storageType}
                       onStorageTypeChange={setStorageType}
-                      bedrockRegion={globalConfig?.bedrockRegion}
                     />
                   </div>
                 )}

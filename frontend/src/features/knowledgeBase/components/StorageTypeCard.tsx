@@ -19,7 +19,6 @@ type Props = {
 };
 
 const StorageTypeCard: React.FC<Props> = ({
-  type,
   title,
   description,
   costLevel,
