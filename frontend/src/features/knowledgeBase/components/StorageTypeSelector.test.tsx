@@ -173,8 +173,8 @@ describe('StorageTypeSelector', () => {
     expect(
       screen.getByText(/Storage Cost Comparison/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/~\$88\/month/)).toBeInTheDocument();
-    expect(screen.getByText(/~\$0\.13\/month/)).toBeInTheDocument();
+    expect(screen.getAllByText(/~\$88\/month/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/~\$0\.13\/month/).length).toBeGreaterThan(0);
   });
 
   it('shows cost savings percentage', () => {

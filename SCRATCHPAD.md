@@ -492,7 +492,89 @@ embeddingModelConfiguration = {
 
 ---
 
-**Last Updated**: 2025-10-06 12:00 UTC
+## Session Update: 2025-10-06 (S3 Vector Frontend Implementation Complete)
+
+### Phase 8: S3 Vector Frontend UI ✅ (Complete)
+
+**Frontend Implementation Completed** (Branch: `feature/s3-vector`):
+
+**Commits**:
+1. `f14dac8` - feat(frontend): add S3 Vector storage type support to KB types
+2. `b7f5004` - feat(frontend): add storage type selector components for S3 Vector support
+3. `aca67b9` - feat(frontend): integrate S3 Vector storage selector with comprehensive tests
+
+**Components Created**:
+1. **StorageTypeCard.tsx** (133 lines)
+   - Reusable card component for storage options
+   - Selection state, preview badges, disabled states
+   - 17 unit tests - ✅ ALL PASSING
+
+2. **S3VectorWarningBanner.tsx** (93 lines)
+   - Preview feature warnings and limitations
+   - Regional availability info
+   - Best use case recommendations
+   - 11 unit tests - ✅ ALL PASSING
+
+3. **StorageTypeSelector.tsx** (140 lines)
+   - Main selector with regional validation
+   - Cost comparison display
+   - Conditional S3VectorWarningBanner
+   - 19 unit tests - ✅ ALL PASSING
+
+**Type System Updates**:
+- Added `VectorStorageType = 'OPENSEARCH_SERVERLESS' | 'S3_VECTOR'`
+- Updated `BedrockKnowledgeBase` with optional `storageType` field
+- Made `openSearch` field optional (null for S3 Vectors)
+- Added S3 Vector constants and defaults
+
+**BotKbEditPage Integration**:
+- Storage type selector for new bots only
+- Regional validation based on `bedrockRegion`
+- Conditional rendering based on storage type
+- Updated create/update payloads
+
+**i18n Translations**: 20+ translation keys added for S3 Vector UI
+
+**Test Results**:
+- **Frontend**: 48 tests - ✅ ALL PASSING (StorageTypeCard: 17, S3VectorWarningBanner: 11, StorageTypeSelector: 19)
+- **Backend**: 18 tests - ✅ Validated in previous session
+
+**Total Test Coverage**: 66 tests (18 backend + 48 frontend)
+
+**React Best Practices**: ✅ Verified
+- TypeScript strict typing
+- useMemo for regional validation
+- Functional components with React.FC
+- Controlled components pattern
+- Proper event handlers
+
+**Design Decisions**:
+- Default to OpenSearch Serverless (production-ready)
+- S3 Vector shown prominently with preview badge
+- Regional validation (5 supported regions)
+- Static cost comparison (99% savings)
+- Storage type immutable after bot creation
+
+**Files Changed**:
+- `frontend/src/features/knowledgeBase/types/index.d.ts`
+- `frontend/src/features/knowledgeBase/constants/index.ts`
+- `frontend/src/features/knowledgeBase/components/StorageTypeCard.tsx` (NEW)
+- `frontend/src/features/knowledgeBase/components/S3VectorWarningBanner.tsx` (NEW)
+- `frontend/src/features/knowledgeBase/components/StorageTypeSelector.tsx` (NEW)
+- `frontend/src/features/knowledgeBase/pages/BotKbEditPage.tsx`
+- `frontend/src/i18n/en/index.ts`
+- `frontend/vite.config.ts` (test setup)
+- `frontend/src/test/setup.ts` (NEW - vitest config)
+- 3 test files (NEW)
+
+**Documentation**:
+- `SCRATCHPAD-S3-VECTOR.md` - Complete technical documentation
+- `SCRATCHPAD-FRONTEND-DESIGN.md` - Design proposal and decisions
+
+---
+
+**Last Updated**: 2025-10-06 14:30 UTC
 **Developer**: Claude Code
-**Status**: ✅ **S3 VECTOR KB COMPLETE: IMPLEMENTATION + TESTS + API COMPLIANT** ✅
-**Next**: Frontend UI toggle for storage type selection (OpenSearch vs S3 Vector)
+**Status**: ✅ **S3 VECTOR KB COMPLETE: FULL-STACK IMPLEMENTATION + ALL TESTS PASSING** ✅
+**Branch**: `feature/s3-vector` (4 commits, ready for PR)
+**Next**: Create PR to merge into `v3` branch (when ready)

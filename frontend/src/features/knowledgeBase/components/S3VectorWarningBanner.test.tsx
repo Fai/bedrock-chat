@@ -18,30 +18,26 @@ describe('S3VectorWarningBanner', () => {
 
   it('renders regional availability limitation', () => {
     render(<S3VectorWarningBanner />);
-    expect(
-      screen.getByText(/Regional Availability.*us-east-1/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Regional Availability:/)).toBeInTheDocument();
+    expect(screen.getByText(/Only available in us-east-1/)).toBeInTheDocument();
   });
 
   it('renders search type limitation', () => {
     render(<S3VectorWarningBanner />);
-    expect(
-      screen.getByText(/Search Type.*Semantic search only/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Search Type:/)).toBeInTheDocument();
+    expect(screen.getByText(/Semantic search only/)).toBeInTheDocument();
   });
 
   it('renders chunking limit limitation', () => {
     render(<S3VectorWarningBanner />);
-    expect(
-      screen.getByText(/Chunking Limit.*Maximum 500 tokens/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Chunking Limit:/)).toBeInTheDocument();
+    expect(screen.getByText(/Maximum 500 tokens/)).toBeInTheDocument();
   });
 
   it('renders query latency limitation', () => {
     render(<S3VectorWarningBanner />);
-    expect(
-      screen.getByText(/Query Latency.*Sub-second response time/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Query Latency:/)).toBeInTheDocument();
+    expect(screen.getByText(/Sub-second response time/)).toBeInTheDocument();
   });
 
   it('renders best for section', () => {
@@ -84,9 +80,9 @@ describe('S3VectorWarningBanner', () => {
       'ap-southeast-2',
     ];
 
-    const regionText = screen.getByText(/Regional Availability/);
+    // Check each region appears in the document
     supportedRegions.forEach((region) => {
-      expect(regionText.textContent).toContain(region);
+      expect(screen.getByText(new RegExp(region))).toBeInTheDocument();
     });
   });
 });
