@@ -379,18 +379,36 @@ const BotKbEditPage: React.FC = () => {
     label: string;
     value: SearchType;
     description: string;
-  }[] = [
-    {
-      label: t('searchSettings.searchType.hybrid.label'),
-      value: 'hybrid',
-      description: t('searchSettings.searchType.hybrid.hint'),
-    },
-    {
-      label: t('searchSettings.searchType.semantic.label'),
-      value: 'semantic',
-      description: t('searchSettings.searchType.semantic.hint'),
-    },
-  ];
+  }[] = useMemo(() => {
+    const options = [
+      {
+        label: t('searchSettings.searchType.semantic.label'),
+        value: 'semantic' as SearchType,
+        description: t('searchSettings.searchType.semantic.hint'),
+      },
+    ];
+
+    // Only show hybrid option for OpenSearch Serverless
+    if (storageType === 'OPENSEARCH_SERVERLESS') {
+      options.unshift({
+        label: t('searchSettings.searchType.hybrid.label'),
+        value: 'hybrid' as SearchType,
+        description: t('searchSettings.searchType.hybrid.hint'),
+      });
+    }
+
+    return options;
+  }, [storageType, t]);
+
+  // Force semantic search for S3 Vector storage
+  useEffect(() => {
+    if (storageType === 'S3_VECTOR' && searchParams.searchType === 'hybrid') {
+      setSearchParams((params) => ({
+        ...params,
+        searchType: 'semantic',
+      }));
+    }
+  }, [storageType, searchParams.searchType]);
 
   const {
     errorMessages,
