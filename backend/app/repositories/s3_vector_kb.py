@@ -66,6 +66,7 @@ def create_s3_vector_knowledge_base(
 
         # Create Knowledge Base with S3 Vector storage
         # Using Quick Create: Bedrock auto-creates vector bucket and index
+        # All s3VectorsConfiguration parameters are optional for Quick Create
         response = client.create_knowledge_base(
             name=kb_name,
             description=f"S3 Vector Knowledge Base for bot {bot_id}",
@@ -76,15 +77,21 @@ def create_s3_vector_knowledge_base(
                     "embeddingModelArn": embeddings_model_arn,
                     "embeddingModelConfiguration": {
                         "bedrockEmbeddingModelConfiguration": {
-                            "dimensions": _get_embedding_dimensions(kb_config.embeddings_model)
+                            "dimensions": _get_embedding_dimensions(kb_config.embeddings_model),
+                            "embeddingDataType": "FLOAT32"  # S3 Vectors supports FLOAT32
                         }
                     }
                 },
             },
             storageConfiguration={
-                "type": "S3",  # This triggers S3 Vector Quick Create
-                # Bedrock auto-creates vector bucket and index
-                # No manual s3Configuration needed
+                "type": "S3_VECTORS",  # Correct type for S3 Vectors
+                "s3VectorsConfiguration": {
+                    # All parameters optional for Quick Create
+                    # Bedrock auto-creates vector bucket and index
+                    # vectorBucketArn: (optional) ARN of S3 bucket for vector storage
+                    # indexArn: (optional) ARN of vector index
+                    # indexName: (optional) Name of vector index
+                }
             },
         )
 
