@@ -804,6 +804,64 @@ How would you categorize this email?`,
       title: 'Knowledge Detail Settings',
       description:
         'Select the embedded model for configuring knowledge, and set the method for splitting documents added as knowledge. These settings cannot be changed after creating the bot.',
+      storageType: {
+        label: 'Vector Storage Type',
+        description:
+          'Choose the backend storage for your vector embeddings. This cannot be changed after creating the bot.',
+        openSearchServerless: {
+          title: 'OpenSearch Serverless',
+          description: 'Production-ready vector search with sub-millisecond latency',
+          costLevel: '~$88/month per 1M vectors',
+          features: {
+            latency: 'Sub-millisecond query latency',
+            hybridSearch: 'Hybrid search (semantic + keyword)',
+            chunkSize: 'Up to 8192 token chunks',
+            production: 'Production-ready with SLA',
+            metadata: 'Full metadata support',
+          },
+        },
+        s3Vector: {
+          title: 'S3 Vectors',
+          description: 'Cost-optimized vector storage for large datasets',
+          costLevel: '~$0.13/month per 1M vectors',
+          features: {
+            costSavings: '99% cost savings vs OpenSearch',
+            largeDatasets: 'Ideal for large datasets',
+            devTest: 'Good for dev/test workloads',
+            quickCreate: 'Quick Create auto-provisioning',
+          },
+          limitations: {
+            preview: 'Preview feature - subject to change',
+            semanticOnly: 'Semantic search only (no hybrid)',
+            chunkLimit: 'Max 500 tokens per chunk',
+            latency: 'Sub-second latency (not sub-millisecond)',
+          },
+          warning: {
+            previewTitle: 'Preview Feature',
+            previewDescription:
+              'S3 Vectors is currently in preview. While suitable for development and testing, it may experience changes and is not recommended for production workloads requiring guaranteed SLAs.',
+            limitationsTitle: 'Key Limitations',
+            limitations: {
+              regional: 'Regional Availability: Only available in us-east-1, us-east-2, us-west-2, eu-central-1, ap-southeast-2',
+              searchType: 'Search Type: Semantic search only (no hybrid search)',
+              chunking: 'Chunking Limit: Maximum 500 tokens per chunk (vs 8192 for OpenSearch)',
+              latency: 'Query Latency: Sub-second response time (vs sub-millisecond for OpenSearch)',
+            },
+            bestForTitle: 'Best For',
+            bestForDescription:
+              'Development, testing, cost-sensitive workloads with large datasets and low query volumes. For production workloads requiring low latency and hybrid search, consider OpenSearch Serverless.',
+          },
+          regionalAvailability:
+            'S3 Vectors is only available in: {{regions}}. Your current Bedrock region is {{currentRegion}}.',
+        },
+        costComparison: {
+          title: 'Storage Cost Comparison (1M vectors @ 1024 dimensions)',
+          openSearch: '~$88/month',
+          s3Vectors: '~$0.13/month',
+          savings: '💰 S3 Vectors saves 99.85% on storage costs',
+          note: 'Note: OpenSearch has additional compute costs (OCU) for indexing and queries. S3 Vectors has additional costs for query requests. Actual costs depend on usage patterns.',
+        },
+      },
       embeddingModel: {
         label: 'Embeddings Model',
         titan_v2: {

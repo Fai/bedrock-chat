@@ -367,6 +367,143 @@ python3 -m pytest tests/test_repositories/test_s3_vector_kb.py --cov=app.reposit
 
 ---
 
-**Session Status**: Implementation + Testing Complete
-**Last Updated**: 2025-10-06 11:55 UTC
-**Next Step**: Frontend UI development (storage type selector)
+## Frontend Implementation Started (2025-10-06 12:35 UTC)
+
+### Design Approved ✅
+
+**Approved Decisions** (2025-10-06 12:30 UTC):
+1. ✅ Default to **OpenSearch Serverless** (production-ready)
+2. ✅ Show S3 Vector **prominently** with preview badge
+3. ✅ **Regional validation** for S3 Vectors availability
+4. ✅ **Static cost comparison** (no calculator in MVP)
+5. ✅ **No migration tool** in MVP (logged for future)
+
+**Future TODOs** (Post-MVP):
+- [ ] Migration tool: OpenSearch → S3 Vector conversion
+- [ ] Interactive cost calculator
+- [ ] Cost analysis recommendations
+- [ ] Bulk migration for multiple bots
+- [ ] Performance comparison dashboard
+
+### Phase 1: Type System & Constants ✅ (Complete)
+
+**Commit**: `f14dac8` - feat(frontend): add S3 Vector storage type support to KB types
+
+**Changes Made**:
+
+1. **Type System** (`frontend/src/features/knowledgeBase/types/index.d.ts`):
+   ```typescript
+   // NEW: Vector storage backend type
+   export type VectorStorageType = 'OPENSEARCH_SERVERLESS' | 'S3_VECTOR';
+
+   // UPDATED: BedrockKnowledgeBase
+   export type BedrockKnowledgeBase = {
+     storageType?: VectorStorageType;  // NEW - defaults to OPENSEARCH_SERVERLESS
+     openSearch?: OpenSearchParams | null;  // UPDATED - optional for S3 Vectors
+     // ... rest of fields
+   };
+   ```
+
+2. **Constants** (`frontend/src/features/knowledgeBase/constants/index.ts`):
+   ```typescript
+   // S3 Vectors supported regions (preview)
+   export const S3_VECTOR_SUPPORTED_REGIONS = [
+     'us-east-1', 'us-east-2', 'us-west-2',
+     'eu-central-1', 'ap-southeast-2'
+   ];
+
+   // S3 Vectors constraints
+   export const S3_VECTOR_CONSTRAINTS = {
+     MAX_CHUNK_TOKENS: 500,
+     SEARCH_TYPE: 'semantic',
+     METADATA_SIZE_LIMIT: 40 * 1024,
+     FILTERABLE_METADATA_LIMIT: 2 * 1024
+   };
+
+   // Default S3 Vector KB config
+   export const DEFAULT_S3_VECTOR_KNOWLEDGEBASE = {
+     storageType: 'S3_VECTOR',
+     embeddingsModel: 'titan_v2',
+     openSearch: null,
+     searchParams: { searchType: 'semantic' }
+   };
+   ```
+
+**Backward Compatibility**:
+- Existing bots without `storageType` default to `OPENSEARCH_SERVERLESS`
+- `openSearch` field now optional (null for S3 Vectors)
+- No breaking changes to existing code
+
+### Phase 2: Storage Selector Components ✅ (Complete)
+
+**Commit**: `[pending]` - feat(frontend): add storage type selector components for S3 Vector support
+
+**Components Created**:
+
+1. **StorageTypeCard** (`frontend/src/features/knowledgeBase/components/StorageTypeCard.tsx`):
+   ```typescript
+   // Reusable card component for each storage option
+   - Displays title, description, cost level, features, limitations
+   - Preview badge for S3 Vectors
+   - Selection state with checkmark icon
+   - Disabled state with tooltip for regional unavailability
+   - Responsive design with Tailwind CSS
+   ```
+
+2. **S3VectorWarningBanner** (`frontend/src/features/knowledgeBase/components/S3VectorWarningBanner.tsx`):
+   ```typescript
+   // Informational warning banner for S3 Vector selection
+   - Preview feature warning
+   - Key limitations (regional, search type, chunking, latency)
+   - Best use case recommendations
+   - Three-section layout with icons
+   ```
+
+3. **StorageTypeSelector** (`frontend/src/features/knowledgeBase/components/StorageTypeSelector.tsx`):
+   ```typescript
+   // Main selector component
+   - Props: selectedStorageType, onStorageTypeChange, bedrockRegion
+   - Regional validation for S3 Vectors availability
+   - Grid layout for storage type cards (OpenSearch + S3 Vector)
+   - Conditional S3VectorWarningBanner display
+   - Regional availability info banner
+   - Static cost comparison table
+   ```
+
+**i18n Translations Added** (`frontend/src/i18n/en/index.ts`):
+   ```typescript
+   knowledgeBaseSettings: {
+     storageType: {
+       label, description,
+       openSearchServerless: { title, description, costLevel, features },
+       s3Vector: { title, description, costLevel, features, limitations, warning },
+       costComparison: { title, openSearch, s3Vectors, savings, note }
+     }
+   }
+   ```
+
+**Features Implemented**:
+- ✅ Card-based UI for storage type selection
+- ✅ OpenSearch Serverless card (default, production-ready)
+- ✅ S3 Vector card with preview badge
+- ✅ Regional validation (disables S3 Vector if not in supported region)
+- ✅ Static cost comparison ($88/mo vs $0.13/mo)
+- ✅ Limitations and warnings for S3 Vectors
+- ✅ Responsive design with dark mode support
+- ✅ i18n support with comprehensive translations
+
+**Design Patterns Followed**:
+- Used existing component patterns (twMerge, react-icons, Tailwind classes)
+- Followed SqlDatabaseConfigForm structure for form components
+- Followed KnowledgeBaseStatusBadge pattern for badge styling
+- Consistent with existing i18n structure
+
+**Backward Compatibility**:
+- Components are standalone and don't affect existing code
+- Will be integrated into BotKbEditPage in Phase 3
+
+---
+
+**Session Status**: Backend Complete + Frontend Phase 1-2 Complete
+**Last Updated**: 2025-10-06 13:15 UTC
+**Next Step**: Phase 3 - Integrate StorageTypeSelector into BotKbEditPage
