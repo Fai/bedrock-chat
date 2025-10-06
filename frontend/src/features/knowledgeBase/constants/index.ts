@@ -47,9 +47,28 @@ export const DEFAULT_OPENSEARCH_ANALYZER: {
   zhhant: 'icu',
 } as const;
 
+// S3 Vectors supported regions (preview)
+export const S3_VECTOR_SUPPORTED_REGIONS = [
+  'us-east-1',
+  'us-east-2',
+  'us-west-2',
+  'eu-central-1',
+  'ap-southeast-2',
+] as const;
+
+// S3 Vectors constraints
+export const S3_VECTOR_CONSTRAINTS = {
+  MAX_CHUNK_TOKENS: 500,  // S3 Vectors chunking limitation
+  SEARCH_TYPE: 'semantic' as const,  // Only semantic search supported
+  METADATA_SIZE_LIMIT: 40 * 1024,  // 40KB max metadata per vector
+  FILTERABLE_METADATA_LIMIT: 2 * 1024,  // 2KB filterable metadata
+} as const;
+
+// Default OpenSearch KB (backward compatible - default storage type)
 export const DEFAULT_BEDROCK_KNOWLEDGEBASE: BedrockKnowledgeBase = {
   knowledgeBaseId: null,
   existKnowledgeBaseId: null,
+  storageType: 'OPENSEARCH_SERVERLESS',  // Default to OpenSearch
   embeddingsModel: 'cohere_multilingual_v3',
   openSearch: OPENSEARCH_ANALYZER['none'],
   chunkingConfiguration: {
@@ -58,6 +77,22 @@ export const DEFAULT_BEDROCK_KNOWLEDGEBASE: BedrockKnowledgeBase = {
   searchParams: {
     maxResults: 20,
     searchType: 'hybrid',
+  },
+};
+
+// S3 Vector KB defaults
+export const DEFAULT_S3_VECTOR_KNOWLEDGEBASE: BedrockKnowledgeBase = {
+  knowledgeBaseId: null,
+  existKnowledgeBaseId: null,
+  storageType: 'S3_VECTOR',
+  embeddingsModel: 'titan_v2',  // Titan V2 recommended for S3 Vectors
+  openSearch: null,  // No OpenSearch for S3 Vectors
+  chunkingConfiguration: {
+    chunkingStrategy: 'default'
+  },
+  searchParams: {
+    maxResults: 5,
+    searchType: 'semantic',  // S3 Vectors only support semantic
   },
 };
 

@@ -1,10 +1,20 @@
+// Vector storage backend type
+export type VectorStorageType = 'OPENSEARCH_SERVERLESS' | 'S3_VECTOR';
+
 export type BedrockKnowledgeBase = {
   knowledgeBaseId: string | null;
   existKnowledgeBaseId: string | null;
   dataSourceIds?: string[]; // only present after bot is ready
+
+  // Storage type selection (defaults to OPENSEARCH_SERVERLESS for backward compatibility)
+  storageType?: VectorStorageType;
+
   embeddingsModel: EmbeddingsModel;
   chunkingConfiguration: ChunkingConfiguration;
-  openSearch: OpenSearchParams;
+
+  // OpenSearch config - optional for S3_VECTOR storage
+  openSearch?: OpenSearchParams | null;
+
   searchParams: SearchParams;
   parsingModel?: ParsingModel;
   webCrawlingScope?: WebCrawlingScope;
