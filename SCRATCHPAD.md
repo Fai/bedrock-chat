@@ -452,12 +452,15 @@ embeddingModelConfiguration = {
 **Git Status**:
 - **Branch**: `feature/s3-vector`
 - **Commits**:
+  - `0c41657` - test(s3-vector): add comprehensive unit tests for S3 Vector KB
+  - `646133f` - docs: update SCRATCHPAD with API compliance review and corrections
   - `6e1e1f7` - fix(s3-vector): correct storageConfiguration to use S3_VECTORS type ⚠️ **CRITICAL FIX**
   - `83ca7a5` - docs: update SCRATCHPAD with S3 Vector KB implementation details
   - `30574ac` - feat(s3-vector): implement S3 Vector Knowledge Base support
-- **Files Changed**: 11 files, 824 insertions
+- **Files Changed**: 12 files, 1,363 insertions
 - **New Files**:
   - `backend/app/repositories/s3_vector_kb.py` (369 lines)
+  - `backend/tests/test_repositories/test_s3_vector_kb.py` (539 lines)
   - `SCRATCHPAD-S3-VECTOR.md` (detailed technical doc)
 
 **API Compliance Review** (2025-10-06 11:30 UTC):
@@ -470,16 +473,26 @@ embeddingModelConfiguration = {
 - ✅ Confirmed data source configuration format
 - ✅ All parameters align with boto3 API specification
 
+**Unit Tests** (2025-10-06 11:50 UTC):
+- ✅ **18 comprehensive unit tests** added
+- ✅ Test file: `backend/tests/test_repositories/test_s3_vector_kb.py` (539 lines)
+- ✅ Covers all functions: create, get, delete, helpers
+- ✅ Tests all chunking strategies (default, fixed, hierarchical, semantic, none)
+- ✅ Validates critical API structure (S3_VECTORS, embeddingDataType)
+- ✅ Follows existing repository test patterns
+- ✅ Mock-based testing with full parameter validation
+
 **Testing Notes**:
 - Requires Bedrock region with S3 Vectors preview (us-east-1 recommended)
 - Set `BEDROCK_KB_ROLE_ARN` with S3 access permissions
 - Test with `storage_type="S3_VECTOR"` in bot creation API
 - Verify auto-created vector bucket in S3 console (Quick Create mode)
 - Expected vector bucket name: `bedrock-kb-vectors-<account>-<region>-<kb-id>`
+- Run tests: `cd backend && python3 -m pytest tests/test_repositories/test_s3_vector_kb.py -v`
 
 ---
 
-**Last Updated**: 2025-10-06 11:40 UTC
+**Last Updated**: 2025-10-06 12:00 UTC
 **Developer**: Claude Code
-**Status**: ✅ **S3 VECTOR KB IMPLEMENTATION COMPLETE + API COMPLIANT** ✅
+**Status**: ✅ **S3 VECTOR KB COMPLETE: IMPLEMENTATION + TESTS + API COMPLIANT** ✅
 **Next**: Frontend UI toggle for storage type selection (OpenSearch vs S3 Vector)

@@ -291,6 +291,82 @@ embeddingModelConfiguration = {
 
 ---
 
-**Session Status**: Implementation Complete with API Compliance Fix
-**Last Updated**: 2025-10-06 11:35 UTC
+## Unit Tests Added (2025-10-06 11:50 UTC)
+
+### Test Coverage Summary
+
+**Test File**: `backend/tests/test_repositories/test_s3_vector_kb.py` (539 lines)
+
+**Total Tests**: 18 comprehensive unit tests
+
+**Test Categories**:
+
+1. **KB Creation Tests** (9 tests):
+   - ✅ Successful S3 Vector KB creation with Quick Create
+   - ✅ Missing BEDROCK_KB_ROLE_ARN environment variable
+   - ✅ Cohere Multilingual V3 embeddings model
+   - ✅ Fixed size chunking configuration
+   - ✅ Hierarchical chunking configuration
+   - ✅ Semantic chunking configuration
+   - ✅ Foundation model parsing (Claude 3.5 Sonnet)
+   - ✅ Without document prefix
+   - ✅ Data source creation failure handling
+
+2. **KB Management Tests** (2 tests):
+   - ✅ Get KB info
+   - ✅ Delete KB with multiple data sources
+
+3. **Helper Function Tests** (7 tests):
+   - ✅ Embeddings model ARN mapping (Titan V2, Cohere)
+   - ✅ Embedding dimensions validation
+   - ✅ Parsing model ARN mapping
+   - ✅ Chunking configuration builder (default, none)
+
+### Critical Validations in Tests
+
+```python
+# Validates correct API structure
+self.assertEqual(storage_config["type"], "S3_VECTORS")  # Not "S3"
+self.assertIn("s3VectorsConfiguration", storage_config)
+self.assertEqual(storage_config["s3VectorsConfiguration"], {})  # Empty for Quick Create
+
+# Validates embedding configuration
+self.assertEqual(embedding_config["dimensions"], 1024)
+self.assertEqual(embedding_config["embeddingDataType"], "FLOAT32")
+
+# Validates all chunking strategies
+- HIERARCHICAL (default with 1500/300 token levels)
+- FIXED_SIZE (500 tokens, 20% overlap)
+- SEMANTIC (300 tokens, 95 percentile threshold)
+- NONE (no chunking)
+```
+
+### Test Patterns Followed
+
+Based on `test_sql_knowledge_base.py`:
+- Uses `unittest.TestCase` framework
+- Mock `get_bedrock_agent_client()` with `@patch`
+- Validate all API call parameters with `call_args[1]`
+- Test both success and failure scenarios
+- Environment variable testing with `@patch.dict(os.environ, ...)`
+
+### Running Tests
+
+```bash
+cd backend
+python3 -m pytest tests/test_repositories/test_s3_vector_kb.py -v
+
+# Or run all repository tests
+python3 -m pytest tests/test_repositories/ -v
+
+# With coverage
+python3 -m pytest tests/test_repositories/test_s3_vector_kb.py --cov=app.repositories.s3_vector_kb
+```
+
+**Expected Result**: All 18 tests pass
+
+---
+
+**Session Status**: Implementation + Testing Complete
+**Last Updated**: 2025-10-06 11:55 UTC
 **Next Step**: Frontend UI development (storage type selector)
