@@ -136,7 +136,7 @@ export class SqlDatabase extends Construct {
       workgroupName: `${envPrefix}${sepHyphen}kb-workgroup`,
       namespaceName: this.namespace.namespaceName,
       baseCapacity: 8, // Minimum 8 RPU (Redshift Processing Units)
-      maxCapacity: 64, // Maximum capacity for auto-scaling
+      maxCapacity: 32, // Reduced from 64 to limit cost spikes (max ~$10.5K/month vs $21K)
       enhancedVpcRouting: true,
       publiclyAccessible: false,
       subnetIds: privateSubnets,
@@ -149,6 +149,15 @@ export class SqlDatabase extends Construct {
         {
           parameterKey: "query_group",
           parameterValue: "knowledge_base",
+        },
+        // Enable auto-pause to save costs when idle
+        {
+          parameterKey: "auto_pause",
+          parameterValue: "true",
+        },
+        {
+          parameterKey: "max_idle_seconds",
+          parameterValue: "600", // 10 minutes idle timeout (saves ~70-80% costs)
         },
       ],
     });
