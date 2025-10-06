@@ -1,4 +1,4 @@
-import { setup, assign } from 'xstate';
+import { createMachine, assign } from 'xstate';
 import { produce } from 'immer';
 
 import { AgentToolsProps, AgentToolState } from '../../features/agent/types';
@@ -10,133 +10,26 @@ export const StreamingState = {
   LEAVING: 'leaving',
 } as const;
 
-export type StreamingState = (typeof StreamingState)[keyof typeof StreamingState];
-
 export type StreamingContext = {
-  /** ReasoningContent in assistant message itself. */
   reasoning: string;
-  /** TextContent in assistant message itself. */
   text: string;
   tools: AgentToolsProps[];
   relatedDocuments: RelatedDocument[];
+  areAllToolsSuccessful: boolean;
 };
 
 export type StreamingEvent =
-  | { type: 'wakeup' }
-  | {
-      type: 'reasoning';
-      reasoning: string;
-    }
-  | {
-      type: 'text';
-      text: string;
-    }
-  | {
-      type: 'tool-use';
-      toolUseId: string;
-      name: string;
-      input: { [key: string]: any }; // eslint-disable-line @typescript-eslint/no-explicit-any
-    }
-  | {
-      type: 'tool-result';
-      toolUseId: string;
-      status: AgentToolState;
-    }
-  | {
-      type: 'related-document';
-      toolUseId: string;
-      relatedDocument: RelatedDocument;
-    }
+  | { type: 'reasoning'; reasoning: string }
+  | { type: 'text'; text: string }
+  | { type: 'tool-use'; toolUseId: string; name: string; input: object }
+  | { type: 'tool-result'; toolUseId: string; status: AgentToolState }
+  | { type: 'related-document'; toolUseId: string; relatedDocument: RelatedDocument }
   | { type: 'reset' }
-  | { type: 'goodbye' };
+  | { type: 'goodbye' }
+  | { type: 'wakeup' };
 
-export const streamingStateMachine = setup({
-  types: {
-    context: {} as StreamingContext,
-    events: {} as StreamingEvent,
-  },
-  actions: {
-    reset: assign({
-      reasoning: '',
-      text: '',
-      tools: [],
-      relatedDocuments: [],
-    }),
-    appendReasoning: assign({
-      reasoning: ({ context, event }) =>
-        event.type === 'reasoning'
-          ? context.reasoning + event.reasoning
-          : context.reasoning,
-    }),
-    appendText: assign({
-      text: ({ context, event }) =>
-        event.type === 'text'
-          ? context.text + event.text
-          : context.text,
-    }),
-    addTool: assign(
-      ({ context, event }) => produce(context, draft => {
-        if (event.type === 'tool-use') {
-          // If reasoing is streamed before the tool arrives, let it be the tool's reasoning.
-          const reasoning = draft.reasoning ? draft.reasoning : undefined;
-          draft.reasoning = '';
-
-          // If text is streamed before the tool arrives, let it be the tool's thought.
-          const text = draft.text ? draft.text : undefined;
-          draft.text = '';
-
-          if (draft.tools.length > 0 && text == null && reasoning == null) {
-            // If there is no reasoning or thought, simply add the tool.
-            draft.tools[draft.tools.length - 1].tools[event.toolUseId] = {
-              name: event.name,
-              input: event.input,
-              status: 'running',
-            };
-          } else {
-            // Otherwise, append the tool with the reasoning or the thought.
-            draft.tools.push({
-              reasoning: reasoning,
-              thought: text,
-              tools: {
-                [event.toolUseId]: {
-                  name: event.name,
-                  input: event.input,
-                  status: 'running',
-                },
-              },
-            });
-          }
-        }
-      }),
-    ),
-    updateToolResult: assign({
-      tools: ({ context, event }) => produce(context.tools, draft => {
-        if (event.type === 'tool-result') {
-          // Update status of the tool
-          const tool = draft.find(tool => event.toolUseId in tool.tools);
-          if (tool != null) {
-            tool.tools[event.toolUseId].status = event.status;
-          }
-        }
-      }),
-    }),
-    addRelatedDocument: assign(({ context, event }) => produce(context, draft => {
-      if (event.type === 'related-document') {
-        // Add related document of the tool
-        const tool = draft.tools.find(tool => event.toolUseId in tool.tools);
-        if (tool != null) {
-          const toolUse = tool.tools[event.toolUseId];
-          if (toolUse.relatedDocuments == null) {
-            toolUse.relatedDocuments = [event.relatedDocument];
-          } else {
-            toolUse.relatedDocuments.push(event.relatedDocument);
-          }
-        }
-        draft.relatedDocuments.push(event.relatedDocument);
-      }
-    })),
-  },
-}).createMachine({
+export const streamingStateMachine = createMachine<StreamingContext, StreamingEvent>({
+  id: 'streaming',
   context: {
     reasoning: '',
     text: '',
@@ -148,42 +41,77 @@ export const streamingStateMachine = setup({
   states: {
     sleeping: {
       on: {
-        wakeup: {
-          actions: 'reset',
-          target: 'streaming',
-        },
+        wakeup: { target: 'streaming' },
+        reasoning: { target: 'streaming', actions: 'appendReasoning' },
+        text: { target: 'streaming', actions: 'appendText' },
+        'tool-use': { target: 'streaming', actions: 'addTool' },
+        'tool-result': { actions: 'updateToolResult' },
+        'related-document': { actions: 'addRelatedDocument' },
+        goodbye: { target: 'leaving' },
       },
     },
     streaming: {
       on: {
-        reasoning: {
-          actions: 'appendReasoning',
-        },
-        text: {
-          actions: 'appendText',
-        },
-        'tool-use': {
-          actions: 'addTool',
-        },
-        'tool-result': {
-          actions: ['updateToolResult'],
-        },
-        'related-document': {
-          actions: ['addRelatedDocument'],
-        },
-        reset: {
-          actions: 'reset',
-        },
-        goodbye: {
-          actions: 'reset',
-          target: 'leaving',
-        },
+        reasoning: { actions: 'appendReasoning' },
+        text: { actions: 'appendText' },
+        'tool-use': { actions: 'addTool' },
+        'tool-result': { actions: 'updateToolResult' },
+        'related-document': { actions: 'addRelatedDocument' },
+        goodbye: { target: 'leaving' },
       },
     },
     leaving: {
-      after: {
-        2500: { target: 'sleeping' },
+      on: {
+        reset: { target: 'sleeping', actions: 'reset' },
       },
     },
+  },
+}, {
+  actions: {
+    reset: assign({ reasoning: '', text: '', tools: [], relatedDocuments: [] }),
+    appendReasoning: assign({
+      reasoning: (context, event) => event.type === 'reasoning' ? context.reasoning + event.reasoning : context.reasoning,
+    }),
+    appendText: assign({
+      text: (context, event) => event.type === 'text' ? context.text + event.text : context.text,
+    }),
+    addTool: assign((context, event) => produce(context, (draft: any) => {
+      if (event.type === 'tool-use') {
+        const reasoning = draft.reasoning || undefined;
+        const text = draft.text || undefined;
+        draft.reasoning = '';
+        draft.text = '';
+        
+        if (draft.tools.length > 0 && !text && !reasoning) {
+          draft.tools[draft.tools.length - 1].tools[event.toolUseId] = {
+            name: event.name, input: event.input, status: 'running'
+          };
+        } else {
+          draft.tools.push({
+            reasoning, thought: text,
+            tools: { [event.toolUseId]: { name: event.name, input: event.input, status: 'running' } }
+          });
+        }
+      }
+    })),
+    updateToolResult: assign({
+      tools: (context, event) => produce(context.tools, (draft: any) => {
+        if (event.type === 'tool-result') {
+          const tool = draft.find((t: any) => event.toolUseId in t.tools);
+          if (tool) tool.tools[event.toolUseId].status = event.status;
+        }
+      }),
+    }),
+    addRelatedDocument: assign((context, event) => produce(context, (draft: any) => {
+      if (event.type === 'related-document') {
+        const tool = draft.tools.find((t: any) => event.toolUseId in t.tools);
+        if (tool) {
+          const toolUse = tool.tools[event.toolUseId];
+          toolUse.relatedDocuments = toolUse.relatedDocuments || [];
+          toolUse.relatedDocuments.push(event.relatedDocument);
+        }
+        draft.relatedDocuments.push(event.relatedDocument);
+      }
+    })),
   },
 });
