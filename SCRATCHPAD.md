@@ -407,18 +407,24 @@ After Optimization:
    - **Parsing**: Claude 3.5 Sonnet, Claude 3 Haiku/Sonnet, or disabled
    - **Data Isolation**: Per-bot S3 prefixes (`documents/{user_id}/{bot_id}/`)
 
-**Technical Specifications**:
+**Technical Specifications** (Corrected):
 ```python
-# Bedrock API call for S3 Vector KB
+# Bedrock API call for S3 Vector KB (CORRECT)
 storageConfiguration = {
-    "type": "S3",  # Triggers Quick Create
-    # Bedrock auto-creates vector bucket and index
+    "type": "S3_VECTORS",  # Must be S3_VECTORS (not "S3")
+    "s3VectorsConfiguration": {
+        # All parameters optional for Quick Create:
+        "vectorBucketArn": "string",  # (optional) Auto-created if omitted
+        "indexArn": "string",         # (optional) Auto-created if omitted
+        "indexName": "string"         # (optional) Auto-generated if omitted
+    }
 }
 
 # Embedding configuration
 embeddingModelConfiguration = {
     "bedrockEmbeddingModelConfiguration": {
-        "dimensions": 1024  # Titan V2
+        "dimensions": 1024,           # Titan V2 dimensions
+        "embeddingDataType": "FLOAT32"  # Required for S3 Vectors
     }
 }
 ```
@@ -445,21 +451,35 @@ embeddingModelConfiguration = {
 
 **Git Status**:
 - **Branch**: `feature/s3-vector`
-- **Commit**: `30574ac` - feat(s3-vector): implement S3 Vector Knowledge Base support
-- **Files Changed**: 10 files, 813 insertions
+- **Commits**:
+  - `6e1e1f7` - fix(s3-vector): correct storageConfiguration to use S3_VECTORS type ⚠️ **CRITICAL FIX**
+  - `83ca7a5` - docs: update SCRATCHPAD with S3 Vector KB implementation details
+  - `30574ac` - feat(s3-vector): implement S3 Vector Knowledge Base support
+- **Files Changed**: 11 files, 824 insertions
 - **New Files**:
   - `backend/app/repositories/s3_vector_kb.py` (369 lines)
   - `SCRATCHPAD-S3-VECTOR.md` (detailed technical doc)
 
+**API Compliance Review** (2025-10-06 11:30 UTC):
+- ✅ Reviewed against AWS Bedrock API documentation
+- ⚠️ **Critical Fix Applied**: Corrected `storageConfiguration` structure
+  - Changed type from "S3" to "S3_VECTORS"
+  - Added required `s3VectorsConfiguration` object
+  - Added `embeddingDataType: "FLOAT32"` parameter
+- ✅ Verified bot creation integration
+- ✅ Confirmed data source configuration format
+- ✅ All parameters align with boto3 API specification
+
 **Testing Notes**:
 - Requires Bedrock region with S3 Vectors preview (us-east-1 recommended)
 - Set `BEDROCK_KB_ROLE_ARN` with S3 access permissions
-- Test with storage_type="S3_VECTOR" in bot creation API
-- Verify auto-created vector bucket in S3 console
+- Test with `storage_type="S3_VECTOR"` in bot creation API
+- Verify auto-created vector bucket in S3 console (Quick Create mode)
+- Expected vector bucket name: `bedrock-kb-vectors-<account>-<region>-<kb-id>`
 
 ---
 
-**Last Updated**: 2025-10-06 11:15 UTC
+**Last Updated**: 2025-10-06 11:40 UTC
 **Developer**: Claude Code
-**Status**: 🚀 **S3 VECTOR KB IMPLEMENTATION COMPLETE** 🚀
+**Status**: ✅ **S3 VECTOR KB IMPLEMENTATION COMPLETE + API COMPLIANT** ✅
 **Next**: Frontend UI toggle for storage type selection (OpenSearch vs S3 Vector)

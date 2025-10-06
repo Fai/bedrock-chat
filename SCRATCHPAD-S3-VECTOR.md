@@ -245,6 +245,52 @@ response = bedrock_agent_client.create_data_source(
 
 ---
 
-**Session Status**: Phase 1 - Data Models Design
-**Last Updated**: 2025-10-06 10:45 UTC
-**Next Step**: Implement backend data models and schemas
+## API Corrections - Documentation Review (2025-10-06 11:30 UTC)
+
+### Critical Fix: Storage Configuration Structure
+
+**Issue Found**: Initial implementation used incorrect API structure
+- ❌ Original: `storageConfiguration = { "type": "S3" }`
+- ✅ Corrected: `storageConfiguration = { "type": "S3_VECTORS", "s3VectorsConfiguration": {} }`
+
+**Root Cause**: Misunderstood AWS documentation - confused S3 data source with S3 Vectors storage
+
+**AWS Bedrock API Specification** (Verified from boto3 docs):
+```python
+storageConfiguration = {
+    "type": "S3_VECTORS",  # Must be S3_VECTORS, not S3
+    "s3VectorsConfiguration": {
+        # All parameters optional for Quick Create:
+        "vectorBucketArn": "string",  # (optional) Auto-created if omitted
+        "indexArn": "string",         # (optional) Auto-created if omitted
+        "indexName": "string"         # (optional) Auto-generated if omitted
+    }
+}
+
+# Embedding configuration also requires embeddingDataType
+embeddingModelConfiguration = {
+    "bedrockEmbeddingModelConfiguration": {
+        "dimensions": 1024,
+        "embeddingDataType": "FLOAT32"  # Required for S3 Vectors
+    }
+}
+```
+
+**Changes Made** (Commit: `6e1e1f7`):
+1. Fixed `type`: "S3" → "S3_VECTORS"
+2. Added `s3VectorsConfiguration` object (even if empty for Quick Create)
+3. Added `embeddingDataType: "FLOAT32"` to embedding config
+4. Documented all optional parameters with comments
+
+**Documentation Sources**:
+- boto3.amazonaws.com/v1/documentation/api/latest/reference/services/bedrock-agent/client/create_knowledge_base.html
+- docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_StorageConfiguration.html
+- docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-bedrock-kb.html
+
+**Validation Status**: ✅ Implementation now complies with AWS Bedrock API specification
+
+---
+
+**Session Status**: Implementation Complete with API Compliance Fix
+**Last Updated**: 2025-10-06 11:35 UTC
+**Next Step**: Frontend UI development (storage type selector)
