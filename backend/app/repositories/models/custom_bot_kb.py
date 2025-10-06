@@ -107,6 +107,7 @@ class SqlDatabaseConfigModel(BaseModel):
     table_name: str
     field_mapping: dict[str, str]
     secret_arn: str
+    embedding_model_arn: str = "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0"  # Default to Titan v2
 
 
 class SqlKnowledgeBaseModel(BaseModel):

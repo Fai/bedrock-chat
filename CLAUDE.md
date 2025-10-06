@@ -236,26 +236,42 @@ Key parameters in `cdk/parameter.ts` or `cdk/cdk.json`:
 
 ## Testing
 
-### Backend Tests
+### Unit Tests
+
+**Backend Tests**:
 Located in `backend/tests/`, run with:
 ```bash
 poetry run python tests/test_bedrock.py
 poetry run python tests/test_repositories/test_conversation.py
+poetry run python tests/test_repositories/test_s3_vector_kb.py
+poetry run python tests/test_repositories/test_sql_knowledge_base.py
 ```
 
-### Frontend Tests
+**Frontend Tests**:
 Located alongside components, run with:
 ```bash
 cd frontend
 npm test
 ```
 
-### CDK Tests
+**CDK Tests**:
 Located in `cdk/test/`, run with:
 ```bash
 cd cdk
 npm test
 ```
+
+### E2E Testing
+
+For comprehensive end-to-end testing including S3 Vector and SQL Knowledge Base features, see:
+- **[E2E Testing Guide](docs/E2E_TESTING_GUIDE.md)** - Complete testing workflows
+- **[SQL KB User Guide](docs/SQL_KB_USER_GUIDE.md)** - SQL KB specific testing
+- **[SQL KB Developer Guide](docs/SQL_KB_DEVELOPER_GUIDE.md)** - Technical implementation details
+
+### Architecture Review
+
+For production deployment considerations:
+- **[AWS Well-Architected Review](docs/AWS_WELL_ARCHITECTED_REVIEW.md)** - Security, cost, and operational assessment
 
 ## Important Notes for Development
 

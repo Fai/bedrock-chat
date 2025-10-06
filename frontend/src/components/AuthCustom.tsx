@@ -10,6 +10,7 @@ import { BaseProps } from '../@types/common';
 import { getCurrentUser, signInWithRedirect, signOut } from 'aws-amplify/auth';
 import { useTranslation } from 'react-i18next';
 import { PiCircleNotch } from 'react-icons/pi';
+import CustomerLogo from './CustomerLogo';
 
 type Props = BaseProps & {
   children: ReactNode;
@@ -56,8 +57,8 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
         </div>
       ) : !authenticated ? (
         <div className="flex flex-col items-center gap-4">
-          <div className="mb-5 mt-10 text-4xl text-aws-sea-blue-light">
-            {t('app.name')}
+          <div className="mb-5 mt-10">
+            <CustomerLogo variant="full" />
           </div>
           <Button onClick={() => handleSignIn()} className="px-20 text-xl">
             {t('signIn.button.login')}

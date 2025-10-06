@@ -1,9 +1,9 @@
 import React, { ReactNode, cloneElement, ReactElement } from 'react';
 import { BaseProps } from '../@types/common';
 import { Authenticator } from '@aws-amplify/ui-react';
-import { useTranslation } from 'react-i18next';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { SocialProvider } from '../@types/auth';
+import CustomerLogo from './CustomerLogo';
 
 type Props = BaseProps & {
   socialProviders: SocialProvider[];
@@ -11,7 +11,6 @@ type Props = BaseProps & {
 };
 
 const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
-  const { t } = useTranslation();
   const { signOut } = useAuthenticator();
 
   return (
@@ -19,8 +18,8 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
       socialProviders={socialProviders}
       components={{
         Header: () => (
-          <div className="mb-5 mt-10 flex justify-center text-3xl text-aws-font-color-light">
-            {t('app.name')}
+          <div className="mb-5 mt-10 flex justify-center">
+            <CustomerLogo variant="full" />
           </div>
         ),
       }}>
