@@ -49,6 +49,7 @@ import {
   OPENSEARCH_ANALYZER,
   DEFAULT_SEARCH_CONFIG,
   DEFAULT_OPENSEARCH_ANALYZER,
+  DEFAULT_S3_VECTOR_KNOWLEDGEBASE,
 } from '../constants';
 import {
   GUARDRAILS_FILTERS_THRESHOLD,
@@ -66,7 +67,9 @@ import {
   SearchParams,
   SearchType,
   WebCrawlingScope,
+  VectorStorageType,
 } from '../types';
+import StorageTypeSelector from '../components/StorageTypeSelector';
 import { toCamelCase } from '../../../utils/StringUtils';
 import useGlobalConfig from '../../../hooks/useGlobalConfig';
 
@@ -145,6 +148,10 @@ const BotKbEditPage: React.FC = () => {
 
   const [embeddingsModel, setEmbeddingsModel] =
     useState<EmbeddingsModel>('titan_v2');
+
+  const [storageType, setStorageType] = useState<VectorStorageType>(
+    'OPENSEARCH_SERVERLESS'
+  );
 
   const [hateThreshold, setHateThreshold] = useState<number>(0);
   const [insultsThreshold, setInsultsThreshold] = useState<number>(0);
@@ -520,6 +527,9 @@ const BotKbEditPage: React.FC = () => {
             bot.bedrockKnowledgeBase.existKnowledgeBaseId
           );
           setEmbeddingsModel(bot.bedrockKnowledgeBase!.embeddingsModel);
+          setStorageType(
+            bot.bedrockKnowledgeBase!.storageType || 'OPENSEARCH_SERVERLESS'
+          );
           setChunkingStrategy(
             bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy
           );
@@ -1258,6 +1268,7 @@ const BotKbEditPage: React.FC = () => {
       bedrockKnowledgeBase: {
         knowledgeBaseId,
         existKnowledgeBaseId,
+        storageType,
         embeddingsModel,
         chunkingConfiguration: (() => {
           switch (chunkingStrategy) {
@@ -1273,7 +1284,7 @@ const BotKbEditPage: React.FC = () => {
               return { chunkingStrategy: 'none' };
           }
         })(),
-        openSearch: openSearchParams,
+        openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
         searchParams: searchParams,
         parsingModel,
         webCrawlingScope,
@@ -1389,6 +1400,7 @@ const BotKbEditPage: React.FC = () => {
         bedrockKnowledgeBase: {
           knowledgeBaseId,
           existKnowledgeBaseId,
+          storageType,
           embeddingsModel,
           chunkingConfiguration: (() => {
             switch (chunkingStrategy) {
@@ -1404,7 +1416,7 @@ const BotKbEditPage: React.FC = () => {
                 return { chunkingStrategy: 'none' };
             }
           })(),
-          openSearch: openSearchParams,
+          openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
           searchParams: searchParams,
           parsingModel,
           webCrawlingScope,
@@ -2005,6 +2017,17 @@ const BotKbEditPage: React.FC = () => {
                 <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
                   {t('knowledgeBaseSettings.description')}
                 </div>
+
+                {/* Storage Type Selector */}
+                {isNewBot && (
+                  <div className="mt-3">
+                    <StorageTypeSelector
+                      selectedStorageType={storageType}
+                      onStorageTypeChange={setStorageType}
+                      bedrockRegion={globalConfig?.bedrockRegion}
+                    />
+                  </div>
+                )}
 
                 <div className="mt-3">
                   <Select

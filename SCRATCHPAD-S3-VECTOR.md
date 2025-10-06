@@ -436,7 +436,7 @@ python3 -m pytest tests/test_repositories/test_s3_vector_kb.py --cov=app.reposit
 
 ### Phase 2: Storage Selector Components ✅ (Complete)
 
-**Commit**: `[pending]` - feat(frontend): add storage type selector components for S3 Vector support
+**Commit**: `b7f5004` - feat(frontend): add storage type selector components for S3 Vector support
 
 **Components Created**:
 
@@ -504,6 +504,113 @@ python3 -m pytest tests/test_repositories/test_s3_vector_kb.py --cov=app.reposit
 
 ---
 
-**Session Status**: Backend Complete + Frontend Phase 1-2 Complete
-**Last Updated**: 2025-10-06 13:15 UTC
-**Next Step**: Phase 3 - Integrate StorageTypeSelector into BotKbEditPage
+### Phase 3: BotKbEditPage Integration ✅ (Complete)
+
+**Commit**: `[pending]` - feat(frontend): integrate S3 Vector storage selector into bot creation
+
+**Changes Made**:
+
+1. **BotKbEditPage.tsx Updates**:
+   ```typescript
+   // Added imports
+   import { VectorStorageType } from '../types';
+   import StorageTypeSelector from '../components/StorageTypeSelector';
+   import { DEFAULT_S3_VECTOR_KNOWLEDGEBASE } from '../constants';
+
+   // Added state
+   const [storageType, setStorageType] = useState<VectorStorageType>('OPENSEARCH_SERVERLESS');
+
+   // Load storageType from existing bots
+   setStorageType(bot.bedrockKnowledgeBase!.storageType || 'OPENSEARCH_SERVERLESS');
+
+   // Updated payloads (both create and update)
+   bedrockKnowledgeBase: {
+     storageType,
+     openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
+     // ... rest
+   }
+
+   // Added StorageTypeSelector to JSX
+   {isNewBot && (
+     <div className="mt-3">
+       <StorageTypeSelector
+         selectedStorageType={storageType}
+         onStorageTypeChange={setStorageType}
+         bedrockRegion={globalConfig?.bedrockRegion}
+       />
+     </div>
+   )}
+   ```
+
+2. **Logic Changes**:
+   - Storage type selector only shows for new bots (isNewBot)
+   - OpenSearch params set to null for S3_VECTOR storage
+   - Storage type included in both create and update payloads
+   - Uses global config for Bedrock region validation
+
+**React Best Practices Verified**:
+- ✅ Proper TypeScript typing with strict types
+- ✅ useMemo for expensive computations (regional check)
+- ✅ Proper prop destructuring
+- ✅ Functional components with FC type
+- ✅ Controlled components pattern
+- ✅ Props validation with TypeScript
+- ✅ Proper event handler naming (on*)
+- ✅ Conditional rendering patterns
+- ✅ No prop drilling (uses direct callbacks)
+- ✅ Component composition (StorageTypeCard, S3VectorWarningBanner)
+
+### Phase 4: Unit Tests ✅ (Complete)
+
+**Test Files Created** (Following repository patterns from KnowledgeBaseStatusBadge.test.tsx):
+
+1. **StorageTypeCard.test.tsx** (17 tests):
+   - ✅ Rendering title, description, cost level
+   - ✅ Features and limitations display
+   - ✅ Selected state and checkmark icon
+   - ✅ Preview badge visibility
+   - ✅ onClick handler behavior
+   - ✅ Disabled state and tooltip
+   - ✅ Custom className application
+   - ✅ Style application (selected, disabled)
+
+2. **S3VectorWarningBanner.test.tsx** (11 tests):
+   - ✅ Preview warning section
+   - ✅ Key limitations display
+   - ✅ All 4 limitation types rendered
+   - ✅ Best for section
+   - ✅ OpenSearch recommendation
+   - ✅ Custom className
+   - ✅ Icon presence
+   - ✅ All supported regions listed
+
+3. **StorageTypeSelector.test.tsx** (20 tests):
+   - ✅ Title and description rendering
+   - ✅ Both storage type cards rendered
+   - ✅ Selection state handling
+   - ✅ onClick callbacks for both cards
+   - ✅ Regional availability logic (all 5 supported regions)
+   - ✅ Disabled state for unsupported regions
+   - ✅ Warning banner conditional display
+   - ✅ Regional info conditional display
+   - ✅ Cost comparison rendering
+   - ✅ Graceful handling of missing region
+   - ✅ Disabled reason tooltips
+
+**Total Test Coverage**: 48 unit tests covering all components
+
+**Test Commands**:
+```bash
+cd frontend
+npm test -- StorageTypeCard
+npm test -- S3VectorWarningBanner
+npm test -- StorageTypeSelector
+# Or run all KB tests
+npm test -- features/knowledgeBase/components
+```
+
+---
+
+**Session Status**: Backend + Frontend Complete with Full Test Coverage
+**Last Updated**: 2025-10-06 14:00 UTC
+**Next Step**: Commit Phase 3 & 4, then final documentation update
