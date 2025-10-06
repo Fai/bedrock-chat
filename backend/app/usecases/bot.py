@@ -166,7 +166,7 @@ def create_new_bot(user: User, bot_input: BotInput) -> BotOutput:
                 # Create a new SQL Knowledge Base
                 sql_config = SqlDatabaseConfigModel(
                     workgroup_name=sql_kb_input.database_config.workgroup_name,
-                    workgroup_arn=sql_kb_input.database_config.workgroup_arn,
+                    workgroup_arn=sql_kb_input.database_config.workgroup_name,
                     database_name=sql_kb_input.database_config.database_name,
                     table_name=sql_kb_input.database_config.table_name,
                     field_mapping=sql_kb_input.database_config.field_mapping,
@@ -215,6 +215,56 @@ def create_new_bot(user: User, bot_input: BotInput) -> BotOutput:
                     # Set sync status to FAILED so user knows there was an issue
                     new_bot.sync_status = "FAILED"
                     new_bot.sync_status_reason = f"Failed to create SQL Knowledge Base: {str(e)}"
+
+    # Handle S3 Vector Knowledge Base creation (for storage_type=S3_VECTOR)
+    elif bot_input.bedrock_knowledge_base and hasattr(bot_input.bedrock_knowledge_base, 'storage_type'):
+        if bot_input.bedrock_knowledge_base.storage_type == "S3_VECTOR":  # type: ignore
+            from app.repositories.s3_vector_kb import create_s3_vector_knowledge_base
+
+            s3_kb_input = bot_input.bedrock_knowledge_base  # type: ignore
+
+            # Check if user provided an existing KB ID
+            if s3_kb_input.exist_knowledge_base_id:
+                logger.info(f"Using existing S3 Vector KB {s3_kb_input.exist_knowledge_base_id} for bot {bot_input.id}")
+                if new_bot.bedrock_knowledge_base:
+                    new_bot.bedrock_knowledge_base.knowledge_base_id = s3_kb_input.exist_knowledge_base_id
+                new_bot.sync_status = "SUCCEEDED"
+                new_bot.sync_status_reason = "Using existing S3 Vector Knowledge Base"
+            else:
+                # Create a new S3 Vector Knowledge Base (Quick Create)
+                try:
+                    # Get document bucket ARN
+                    document_bucket_arn = f"arn:aws:s3:::{DOCUMENT_BUCKET}"
+                    document_prefix = compose_upload_document_s3_path(user.id, bot_input.id, "").rstrip("/")
+
+                    logger.info(f"Creating S3 Vector KB for bot {bot_input.id}")
+                    logger.info(f"  - Document bucket: {document_bucket_arn}")
+                    logger.info(f"  - Document prefix: {document_prefix}")
+
+                    kb_id, data_source_id = create_s3_vector_knowledge_base(
+                        bot_id=bot_input.id,
+                        kb_config=new_bot.bedrock_knowledge_base,  # type: ignore
+                        kb_name=f"s3-vector-kb-{bot_input.id}",
+                        document_bucket_arn=document_bucket_arn,
+                        document_prefix=document_prefix,
+                    )
+
+                    logger.info(f"Created S3 Vector KB {kb_id} for bot {bot_input.id}")
+
+                    # Update bot with actual KB ID
+                    if new_bot.bedrock_knowledge_base:
+                        new_bot.bedrock_knowledge_base.knowledge_base_id = kb_id
+                        if data_source_id:
+                            new_bot.bedrock_knowledge_base.data_source_ids = [data_source_id]
+
+                    # Mark as succeeded - S3 Vector KB uses Quick Create (auto-provisioned)
+                    new_bot.sync_status = "SUCCEEDED"
+                    new_bot.sync_status_reason = "S3 Vector KB created successfully"
+
+                except Exception as e:
+                    logger.error(f"Failed to create S3 Vector KB for bot {bot_input.id}: {e}")
+                    new_bot.sync_status = "FAILED"
+                    new_bot.sync_status_reason = f"Failed to create S3 Vector Knowledge Base: {str(e)}"
 
     store_bot(new_bot)
 

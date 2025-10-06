@@ -8,6 +8,7 @@ from app.routes.schemas.bot_kb import (
     type_os_token_filter,
     type_os_tokenizer,
     type_kb_resource_type,
+    type_kb_storage_type,
 )
 from typing import Self
 from pydantic import BaseModel, validator, model_validator
@@ -75,7 +76,8 @@ class BedrockAgentGetKnowledgeBaseResponse(BaseModel):
 
 class BedrockKnowledgeBaseModel(BaseModel):
     embeddings_model: type_kb_embeddings_model
-    open_search: OpenSearchParamsModel
+    open_search: OpenSearchParamsModel | None = None  # Optional for S3 vector store
+    storage_type: type_kb_storage_type = "OPENSEARCH_SERVERLESS"  # Default to existing behavior
     chunking_configuration: (
         DefaultParamsModel
         | FixedSizeParamsModel

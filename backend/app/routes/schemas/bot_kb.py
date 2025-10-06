@@ -39,6 +39,10 @@ type_os_token_filter = Literal[
 # Ref: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_KnowledgeBaseConfiguration.html#bedrock-Type-agent_KnowledgeBaseConfiguration-type
 type_kb_resource_type = Literal["VECTOR", "KENDRA", "SQL"]
 
+# Vector Store Type
+# Determines the backend storage for vector embeddings
+type_kb_storage_type = Literal["OPENSEARCH_SERVERLESS", "S3_VECTOR"]
+
 
 class SearchParams(BaseSchema):
     max_results: int
@@ -90,7 +94,8 @@ class WebCrawlingFilters(BaseSchema):
 
 class BedrockKnowledgeBaseInput(BaseSchema):
     embeddings_model: type_kb_embeddings_model
-    open_search: OpenSearchParams
+    open_search: OpenSearchParams | None = None  # Optional for S3 vector store
+    storage_type: type_kb_storage_type = "OPENSEARCH_SERVERLESS"  # Default to existing behavior
     chunking_configuration: (
         DefaultParams
         | FixedSizeParams
@@ -110,7 +115,8 @@ class BedrockKnowledgeBaseInput(BaseSchema):
 
 class BedrockKnowledgeBaseOutput(BaseSchema):
     embeddings_model: type_kb_embeddings_model
-    open_search: OpenSearchParams
+    open_search: OpenSearchParams | None = None  # Optional for S3 vector store
+    storage_type: type_kb_storage_type = "OPENSEARCH_SERVERLESS"
     chunking_configuration: (
         DefaultParams
         | FixedSizeParams

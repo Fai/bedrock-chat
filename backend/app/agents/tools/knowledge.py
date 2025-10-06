@@ -53,12 +53,11 @@ def search_knowledge(
 
 
 def create_knowledge_tool(bot: BotModel) -> AgentTool:
-    # Check if this is a SQL Knowledge Base
+    # Detect KB type using the same logic as search_knowledge
     is_sql_kb = False
     if bot.bedrock_knowledge_base:
-        # Check if it has knowledge_base_type attribute (SqlKnowledgeBaseModel)
-        if hasattr(bot.bedrock_knowledge_base, 'knowledge_base_type'):
-            is_sql_kb = bot.bedrock_knowledge_base.knowledge_base_type == "SQL"  # type: ignore
+        kb_type = detect_kb_type(bot)
+        is_sql_kb = (kb_type == "SQL")
 
     logger.info(f"Creating knowledge tool - SQL KB: {is_sql_kb}, Has KB: {bot.bedrock_knowledge_base is not None}")
 
