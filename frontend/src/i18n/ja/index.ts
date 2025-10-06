@@ -810,6 +810,63 @@ const translation: typeof en = {
       title: 'ナレッジの詳細設定',
       description:
         'ナレッジを設定するための埋め込みモデルの選択や、ナレッジとして追加したドキュメントの分割方法などを設定します。ボット作成後の変更はできません。',
+      storageType: {
+        label: 'ベクトルストレージタイプ',
+        description:
+          'ベクトル埋め込みのバックエンドストレージを選択してください。ボット作成後は変更できません。',
+        openSearchServerless: {
+          title: 'OpenSearch Serverless',
+          description: 'サブミリ秒レイテンシーの本格的なベクトル検索',
+          costLevel: '100万ベクトルあたり約$88/月',
+          features: {
+            latency: 'サブミリ秒のクエリレイテンシー',
+            hybridSearch: 'ハイブリッド検索（セマンティック + キーワード）',
+            chunkSize: '最大8192トークンのチャンク',
+            production: 'SLA付きの本格運用対応',
+            metadata: '完全なメタデータサポート',
+          },
+        },
+        s3Vector: {
+          title: 'S3 Vectors',
+          description: '大規模データセット向けのコスト最適化されたベクトルストレージ',
+          costLevel: '100万ベクトルあたり約$0.13/月',
+          features: {
+            costSavings: 'OpenSearchと比較して99%のコスト削減',
+            largeDatasets: '大規模データセットに最適',
+            devTest: '開発/テストワークロードに適している',
+            quickCreate: 'Quick Create自動プロビジョニング',
+          },
+          limitations: {
+            preview: 'プレビュー機能 - 変更される可能性があります',
+            semanticOnly: 'セマンティック検索のみ（ハイブリッドなし）',
+            chunkLimit: 'チャンクあたり最大500トークン',
+            latency: 'サブ秒レイテンシー（サブミリ秒ではない）',
+          },
+          warning: {
+            previewTitle: 'プレビュー機能',
+            previewDescription:
+              'S3 Vectorsは現在プレビュー中です。開発やテストには適していますが、変更される可能性があり、SLAが保証される本格運用ワークロードには推奨されません。',
+            limitationsTitle: '主な制限事項',
+            limitations: {
+              regional: '地域の可用性: us-east-1、us-east-2、us-west-2、eu-central-1、ap-southeast-2でのみ利用可能',
+              searchType: '検索タイプ: セマンティック検索のみ（ハイブリッド検索なし）',
+              chunking: 'チャンク制限: チャンクあたり最大500トークン（OpenSearchの8192と比較）',
+              latency: 'クエリレイテンシー: サブ秒応答時間（OpenSearchのサブミリ秒と比較）',
+            },
+            bestForTitle: '最適な用途',
+            bestForDescription: '開発・テスト環境、コストに敏感なプロジェクト、大容量データセット、非クリティカルなワークロード',
+          },
+          regionalAvailability:
+            'S3 Vectorsは以下の地域でのみ利用可能です: {{regions}}。現在のBedrockリージョンは{{currentRegion}}です。',
+        },
+        costComparison: {
+          title: 'コスト比較',
+          openSearch: 'OpenSearch Serverless',
+          s3Vectors: 'S3 Vectors',
+          savings: '99%のコスト削減',
+          note: '実際のコストは使用量とAWSの価格設定により異なる場合があります',
+        },
+      },
       embeddingModel: {
         label: '埋め込みモデル',
         titan_v2: {
