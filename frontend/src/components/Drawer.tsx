@@ -41,7 +41,6 @@ import Button from './Button';
 import Skeleton from './Skeleton';
 import { isPinnedBot } from '../utils/BotUtils';
 import IconPinnedBot from './IconPinnedBot';
-import CustomerLogo from './CustomerLogo';
 
 type Props = BaseProps & {
   isAdmin: boolean;
@@ -289,9 +288,6 @@ const Drawer: React.FC<Props> = (props) => {
           } text-sm  text-white transition-width`}>
           {!isAdminPanel && (
             <>
-              <div className="flex items-center justify-center border-b border-aws-sea-blue-light/20 p-4 dark:border-aws-sea-blue-dark/20">
-                <CustomerLogo variant="compact" />
-              </div>
               <DrawerItem
                 isActive={false}
                 icon={<PiNotePencil />}
