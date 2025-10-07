@@ -1599,16 +1599,18 @@ const BotKbEditPage: React.FC = () => {
                 setTools={setTools}
               />
 
-              <div className="mt-3">
-                <div className="flex items-center gap-1">
-                  <div className="text-lg font-bold">
-                    {t('bot.label.knowledge')}
+              {/* Knowledge Section - Only for VECTOR KBs */}
+              {kbResourceType === 'VECTOR' && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-1">
+                    <div className="text-lg font-bold">
+                      {t('bot.label.knowledge')}
+                    </div>
                   </div>
-                </div>
 
-                <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                  {t('bot.help.knowledge.overview')}
-                </div>
+                  <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                    {t('bot.help.knowledge.overview')}
+                  </div>
 
                 <div className="mt-2 flex gap-4">
                   <RadioButton
@@ -1940,6 +1942,7 @@ const BotKbEditPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+              )}
 
               <div className="mt-3">
                 <div className="flex items-center gap-1">
@@ -2154,7 +2157,9 @@ const BotKbEditPage: React.FC = () => {
                     )}
                   </>
                 )}
-                {chunkingStrategy === 'fixed_size' && (
+
+                {/* Chunking Strategy Details - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && chunkingStrategy === 'fixed_size' && (
                   <>
                     <div className="mx-4 mt-2">
                       <Slider
@@ -2224,7 +2229,7 @@ const BotKbEditPage: React.FC = () => {
                     </div>
                   </>
                 )}
-                {chunkingStrategy === 'hierarchical' && (
+                {kbResourceType === 'VECTOR' && chunkingStrategy === 'hierarchical' && (
                   <>
                     <div className="mx-4 mt-2">
                       <Slider
@@ -2338,7 +2343,7 @@ const BotKbEditPage: React.FC = () => {
                     </div>
                   </>
                 )}
-                {chunkingStrategy === 'semantic' && (
+                {kbResourceType === 'VECTOR' && chunkingStrategy === 'semantic' && (
                   <>
                     <div className="mx-4 mt-2">
                       <Slider

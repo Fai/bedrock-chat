@@ -97,9 +97,12 @@ const StorageTypeSelector: React.FC<Props> = ({
         <div className="rounded-lg border border-blue/30 bg-blue/5 p-3 dark:border-blue/40 dark:bg-blue/10">
           <p className="text-xs text-blue-600 dark:text-blue-400">
             <strong>Note:</strong> S3 Vectors is only available in:{' '}
-            {S3_VECTOR_SUPPORTED_REGIONS.join(', ')}. Your current Bedrock
-            region is{' '}
-            <strong>{bedrockRegion || 'not configured'}</strong>.
+            {S3_VECTOR_SUPPORTED_REGIONS.join(', ')}. 
+            {bedrockRegion ? (
+              <>Your current Bedrock region is <strong>{bedrockRegion}</strong>.</>
+            ) : (
+              <>Contact your administrator to configure S3 Vector support.</>
+            )}
           </p>
         </div>
       )}
