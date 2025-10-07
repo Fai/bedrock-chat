@@ -1,7 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import BotKbEditPage from './BotKbEditPage';
 
 // Mock dependencies
 vi.mock('../../../hooks/useBot', () => ({
@@ -38,18 +35,6 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => vi.fn(),
   };
 });
-
-// Test wrapper component
-const TestWrapper = ({ children, storageType = 'OPENSEARCH_SERVERLESS' }: { 
-  children: React.ReactNode; 
-  storageType?: 'OPENSEARCH_SERVERLESS' | 'S3_VECTOR';
-}) => {
-  return (
-    <BrowserRouter>
-      {children}
-    </BrowserRouter>
-  );
-};
 
 describe('BotKbEditPage - Storage Type Conditionals', () => {
   beforeEach(() => {
@@ -107,11 +92,8 @@ describe('S3 Vector Chunk Limits', () => {
 // Test validation logic helper functions
 describe('Validation Logic', () => {
   it('should use S3 Vector limits when storage type is S3_VECTOR', () => {
-    const storageType = 'S3_VECTOR';
-    const embeddingsModel = 'titan_v2';
-    
     // Mock the validation logic
-    const getMaxTokensForFixedSize = (storageType: string, embeddingsModel: string) => {
+    const getMaxTokensForFixedSize = (storageType: string) => {
       if (storageType === 'S3_VECTOR') {
         return 500; // S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
       }
@@ -119,16 +101,13 @@ describe('Validation Logic', () => {
       return 8192; // EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel]
     };
 
-    expect(getMaxTokensForFixedSize('S3_VECTOR', embeddingsModel)).toBe(500);
-    expect(getMaxTokensForFixedSize('OPENSEARCH_SERVERLESS', embeddingsModel)).toBe(8192);
+    expect(getMaxTokensForFixedSize('S3_VECTOR')).toBe(500);
+    expect(getMaxTokensForFixedSize('OPENSEARCH_SERVERLESS')).toBe(8192);
   });
 
   it('should use OpenSearch limits when storage type is OPENSEARCH_SERVERLESS', () => {
-    const storageType = 'OPENSEARCH_SERVERLESS';
-    const embeddingsModel = 'titan_v2';
-    
     // Mock the validation logic
-    const getMaxTokensForSemantic = (storageType: string, embeddingsModel: string) => {
+    const getMaxTokensForSemantic = (storageType: string) => {
       if (storageType === 'S3_VECTOR') {
         return 500; // S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
       }
@@ -136,7 +115,7 @@ describe('Validation Logic', () => {
       return 8192; // EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel]
     };
 
-    expect(getMaxTokensForSemantic('OPENSEARCH_SERVERLESS', embeddingsModel)).toBe(8192);
-    expect(getMaxTokensForSemantic('S3_VECTOR', embeddingsModel)).toBe(500);
+    expect(getMaxTokensForSemantic('OPENSEARCH_SERVERLESS')).toBe(8192);
+    expect(getMaxTokensForSemantic('S3_VECTOR')).toBe(500);
   });
 });

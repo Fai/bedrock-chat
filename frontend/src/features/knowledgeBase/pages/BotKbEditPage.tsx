@@ -1074,14 +1074,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         hierarchicalParams.maxParentTokenSize >
-        EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxParentTokenSize.MAX
+          : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'hierarchicalParams.maxParentTokenSize',
           t('validation.maxRange.message', {
-            size: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[
-              embeddingsModel
-            ],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxParentTokenSize.MAX
+              : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel],
           })
         );
         return false;
@@ -1100,14 +1102,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         hierarchicalParams.maxChildTokenSize >
-        EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxChildTokenSize.MAX
+          : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'hierarchicalParams.maxChildTokenSize',
           t('validation.maxRange.message', {
-            size: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[
-              embeddingsModel
-            ],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxChildTokenSize.MAX
+              : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel],
           })
         );
         return false;
@@ -1134,12 +1138,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         semanticParams.maxTokens >
-        EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+          : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'semanticParams.maxTokens',
           t('validation.maxRange.message', {
-            size: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+              : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
           })
         );
         return false;
@@ -2230,8 +2238,9 @@ const BotKbEditPage: React.FC = () => {
                         range={{
                           min: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize
                             .MIN,
-                          max: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize
-                            .MAX[embeddingsModel],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxParentTokenSize.MAX
+                            : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel],
                           step: EDGE_HIERARCHICAL_CHUNK_PARAMS
                             .maxParentTokenSize.STEP,
                         }}
@@ -2265,8 +2274,9 @@ const BotKbEditPage: React.FC = () => {
                         range={{
                           min: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize
                             .MIN,
-                          max: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize
-                            .MAX[embeddingsModel],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxChildTokenSize.MAX
+                            : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel],
                           step: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize
                             .STEP,
                         }}
@@ -2301,9 +2311,9 @@ const BotKbEditPage: React.FC = () => {
                         }
                         range={{
                           min: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MIN,
-                          max: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[
-                            embeddingsModel
-                          ],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+                            : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
                           step: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.STEP,
                         }}
                         onChange={(value) =>
