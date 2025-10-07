@@ -15,24 +15,39 @@ const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
   const { signOut } = useAuthenticator();
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
-      style={{ backgroundImage: `url(${BRANDING.customer.background.login})` }}
-    >
-      <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-8 w-full max-w-md">
-        <Authenticator
-          socialProviders={socialProviders}
-          components={{
-            Header: () => (
-              <div className="mb-5 mt-10 flex justify-center">
-                <CustomerLogo variant="full" />
-              </div>
-            ),
-          }}>
-          <>{cloneElement(children as ReactElement, { signOut })}</>
-        </Authenticator>
-      </div>
-    </div>
+    <Authenticator
+      socialProviders={socialProviders}
+      components={{
+        Header: () => (
+          <div className="mb-5 mt-10 flex justify-center">
+            <CustomerLogo variant="full" />
+          </div>
+        ),
+        SignIn: {
+          Header: () => (
+            <div className="mb-5 mt-10 flex justify-center">
+              <CustomerLogo variant="full" />
+            </div>
+          ),
+          Footer: () => <div></div>
+        },
+        SignUp: {
+          Header: () => (
+            <div className="mb-5 mt-10 flex justify-center">
+              <CustomerLogo variant="full" />
+            </div>
+          ),
+          Footer: () => <div></div>
+        }
+      }}
+      style={{
+        '--amplify-components-authenticator-router-background': `url(${BRANDING.customer.background.login})`,
+        '--amplify-components-authenticator-router-background-size': 'cover',
+        '--amplify-components-authenticator-router-background-position': 'center',
+        '--amplify-components-authenticator-router-background-repeat': 'no-repeat'
+      } as React.CSSProperties}>
+      <>{cloneElement(children as ReactElement, { signOut })}</>
+    </Authenticator>
   );
 };
 

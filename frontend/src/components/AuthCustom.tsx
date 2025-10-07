@@ -54,7 +54,7 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
           className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
           style={{ backgroundImage: `url(${BRANDING.customer.background.login})` }}
         >
-          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-8">
+          <div className="bg-white/90 backdrop-blur-sm rounded-lg shadow-xl p-8 flex justify-center">
             <div className="flex flex-col items-center p-4">
               <div className="mb-3 text-4xl">Loading...</div>
               <div className="animate-spin">
@@ -80,9 +80,11 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
           </div>
         </div>
       ) : (
-        // Pass the signOut function to the child component
+        // No background for authenticated state - just pass through to app
         <>
           {cloneElement(children as ReactElement, { signOut: handleSignOut })}
+        </>
+      )}
         </>
       )}
     </>
