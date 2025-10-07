@@ -549,44 +549,74 @@ const BotKbEditPage: React.FC = () => {
           setExistKnowledgeBaseId(
             bot.bedrockKnowledgeBase.existKnowledgeBaseId
           );
-          setEmbeddingsModel(bot.bedrockKnowledgeBase!.embeddingsModel);
-          setStorageType(
-            bot.bedrockKnowledgeBase!.storageType || 'OPENSEARCH_SERVERLESS'
-          );
-          setChunkingStrategy(
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy
-          );
-          if (
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-            'fixed_size'
-          ) {
-            setFixedSizeParams(
-              (bot.bedrockKnowledgeBase!
-                .chunkingConfiguration as FixedSizeParams) ??
-                DEFAULT_FIXED_CHUNK_PARAMS
-            );
-          } else if (
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-            'hierarchical'
-          ) {
-            setHierarchicalParams(
-              (bot.bedrockKnowledgeBase!
-                .chunkingConfiguration as HierarchicalParams) ??
-                DEFAULT_HIERARCHICAL_CHUNK_PARAMS
-            );
-          } else if (
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-            'semantic'
-          ) {
-            setSemanticParams(
-              (bot.bedrockKnowledgeBase!
-                .chunkingConfiguration as SemanticParams) ??
-                DEFAULT_SEMANTIC_CHUNK_PARAMS
-            );
+
+          // Detect KB resource type from existing bot data
+          // SQL KBs won't have embeddings model or chunking configuration
+          if (!bot.bedrockKnowledgeBase.embeddingsModel || 
+              !bot.bedrockKnowledgeBase.chunkingConfiguration) {
+            setKbResourceType('SQL');
+          } else {
+            setKbResourceType('VECTOR');
           }
 
-          setOpenSearchParams(bot.bedrockKnowledgeBase!.openSearch || { analyzer: null });
-          setSearchParams(bot.bedrockKnowledgeBase!.searchParams);
+          // Detect KB resource type from existing bot data
+          // SQL KBs won't have embeddings model or chunking configuration
+          if (!bot.bedrockKnowledgeBase.embeddingsModel || 
+              !bot.bedrockKnowledgeBase.chunkingConfiguration) {
+            setKbResourceType('SQL');
+          } else {
+            setKbResourceType('VECTOR');
+            
+            // Only load VECTOR-specific properties
+            setEmbeddingsModel(bot.bedrockKnowledgeBase!.embeddingsModel);
+            setStorageType(
+              bot.bedrockKnowledgeBase!.storageType || 'OPENSEARCH_SERVERLESS'
+            );
+            setChunkingStrategy(
+              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy
+            );
+            if (
+              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
+              'fixed_size'
+            ) {
+              setFixedSizeParams(
+                (bot.bedrockKnowledgeBase!
+                  .chunkingConfiguration as FixedSizeParams) ??
+                  DEFAULT_FIXED_CHUNK_PARAMS
+              );
+            } else if (
+              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
+              'hierarchical'
+            ) {
+              setHierarchicalParams(
+                (bot.bedrockKnowledgeBase!
+                  .chunkingConfiguration as HierarchicalParams) ??
+                  DEFAULT_HIERARCHICAL_CHUNK_PARAMS
+              );
+            } else if (
+              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
+              'semantic'
+            ) {
+              setSemanticParams(
+                (bot.bedrockKnowledgeBase!
+                  .chunkingConfiguration as SemanticParams) ??
+                  DEFAULT_SEMANTIC_CHUNK_PARAMS
+              );
+            }
+
+            setOpenSearchParams(bot.bedrockKnowledgeBase!.openSearch || { analyzer: null });
+            setSearchParams(bot.bedrockKnowledgeBase!.searchParams);
+            setParsingModel(bot.bedrockKnowledgeBase.parsingModel);
+            setWebCrawlingScope(
+              bot.bedrockKnowledgeBase.webCrawlingScope ?? 'DEFAULT'
+            );
+            setWebCrawlingFilters({
+              includePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
+                ?.includePatterns || [''],
+              excludePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
+                ?.excludePatterns || [''],
+            });
+          }
           setGuardrailArn(bot.bedrockGuardrails.guardrailArn);
           setGuardrailVersion(
             bot.bedrockGuardrails.guardrailVersion
@@ -628,16 +658,6 @@ const BotKbEditPage: React.FC = () => {
               ? bot.bedrockGuardrails.relevanceThreshold
               : 0
           );
-          setParsingModel(bot.bedrockKnowledgeBase.parsingModel);
-          setWebCrawlingScope(
-            bot.bedrockKnowledgeBase.webCrawlingScope ?? 'DEFAULT'
-          );
-          setWebCrawlingFilters({
-            includePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
-              ?.includePatterns || [''],
-            excludePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
-              ?.excludePatterns || [''],
-          });
           setActiveModels(bot.activeModels);
         })
         .finally(() => {
