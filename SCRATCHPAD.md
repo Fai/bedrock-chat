@@ -573,8 +573,104 @@ embeddingModelConfiguration = {
 
 ---
 
-**Last Updated**: 2025-10-06 14:30 UTC
+## Session Update: 2025-10-07 (KB UI Settings Refactor Planning)
+
+### Phase 9: Knowledge Base UI Settings Refactor ✅ (Phase 1-2 Complete)
+
+**Problem Identified**: Current bot settings UI shows irrelevant settings for different KB types:
+- OpenSearch Analyzer shown for S3 Vector and SQL KBs (not applicable)
+- Chunking/Parsing settings shown for SQL KBs (not applicable)
+- S3 Vector 500 token limit not enforced in UI validation
+- File upload/URL inputs shown for SQL KBs (should show database connection)
+
+**Implementation Plan Created**:
+
+#### **Phase 1: Conditional UI Rendering ✅ (COMPLETE)**
+**Commit**: `9c0eafc` - feat(kb-ui): implement Phase 1 conditional UI rendering
+
+**Completed Items**:
+- ✅ **Hide OpenSearch Analyzer** for S3 Vector storage types
+   - Wrapped in `{storageType === 'OPENSEARCH_SERVERLESS' && (...)}`
+   - Location: `BotKbEditPage.tsx` lines 2380-2450
+
+- ✅ **Enforce S3 Vector 500 Token Limit**
+   - Added `S3_VECTOR_CHUNK_LIMITS` constants with 500 token max
+   - Updated validation logic to use S3-specific limits
+   - Dynamic slider max values based on storage type
+
+- ✅ **S3 Vector Limitation Warning Alert**
+   - Added info alert after chunking strategy selection
+   - Shows "500 tokens max, semantic search only" warning
+   - Added `s3VectorLimitation` translation key
+
+#### **Phase 2: Enhanced Validation ✅ (COMPLETE)**
+**Commits**: 
+- `95e2fc4` - test(kb-ui): add unit tests for Phase 1 conditional rendering
+- `e48692f` - feat(kb-ui): complete Phase 2 enhanced validation for all chunking strategies
+
+**Completed Items**:
+- ✅ **Complete Validation Coverage** for all chunking strategies:
+   - Fixed Size: Uses S3 Vector 500 token limit when `storageType === 'S3_VECTOR'`
+   - Hierarchical: Both parent and child tokens limited to 500 for S3 Vector
+   - Semantic: Uses S3 Vector 500 token limit when applicable
+
+- ✅ **Dynamic Slider Ranges** for all chunking types:
+   - Fixed Size slider: `max: storageType === 'S3_VECTOR' ? 500 : 8192/512`
+   - Hierarchical parent slider: Dynamic max based on storage type
+   - Hierarchical child slider: Dynamic max based on storage type  
+   - Semantic slider: Dynamic max based on storage type
+
+- ✅ **Unit Tests** (8 tests passing):
+   - Test S3_VECTOR_CHUNK_LIMITS constants validation
+   - Test validation logic for storage type-specific limits
+   - Added Japanese translation for s3VectorLimitation
+   - Fixed TypeScript compilation warnings
+
+**Files Modified**:
+- `frontend/src/features/knowledgeBase/constants/index.ts` (S3 limits)
+- `frontend/src/features/knowledgeBase/pages/BotKbEditPage.tsx` (conditional logic + validation)
+- `frontend/src/i18n/en/index.ts` + `frontend/src/i18n/ja/index.ts` (translation keys)
+- `frontend/src/features/knowledgeBase/pages/BotKbEditPage.test.tsx` (unit tests)
+
+#### **Phase 2: Enhanced User Experience (Remaining)**
+**Remaining Items**:
+- [ ] Conditionally render chunking settings (hide for SQL KBs)
+- [ ] Conditionally render parsing model settings (hide for SQL KBs)
+- [ ] Conditionally render data source inputs (vector vs SQL)
+- [ ] Enhanced StorageTypeSelector with feature comparison
+- [ ] Update help text to mention type applicability
+
+#### **Phase 3: SQL KB Integration (Planned)**
+- [ ] Add SQL KB connection form (if not exists)
+- [ ] Update validation to handle SQL KB configuration
+- [ ] Consider separate SQL KB route option
+
+**Testing Strategy**:
+- ✅ Unit tests for conditional rendering (8 tests passing)
+- ✅ Build validation (TypeScript compilation successful)
+- [ ] Integration tests for each KB type creation
+- [ ] Manual testing checklist (12 scenarios)
+
+**Success Metrics**:
+- ✅ OpenSearch Analyzer hidden for S3 Vector (implemented)
+- ✅ S3 Vector 500 token limit enforced for ALL chunking strategies (implemented)
+- ✅ Dynamic slider ranges prevent invalid values (implemented)
+- [ ] Zero chunking/parsing settings shown for SQL KBs
+- [ ] User confusion tickets reduced by 80%
+- [ ] KB creation success rate improved by 20%
+
+**Git Status**:
+- **Current Branch**: `feature/kb-ui-refactor`
+- **Latest Commits**: 
+  - `9c0eafc` - Phase 1 complete (conditional rendering)
+  - `95e2fc4` - Unit tests added
+  - `e48692f` - Phase 2 validation complete
+- **Ready For**: Continue Phase 2 (chunking/parsing conditionals for SQL KBs)
+
+---
+
+**Last Updated**: 2025-10-07 14:30 UTC
 **Developer**: Claude Code
-**Status**: ✅ **S3 VECTOR KB COMPLETE: FULL-STACK IMPLEMENTATION + ALL TESTS PASSING** ✅
-**Branch**: `feature/s3-vector` (4 commits, ready for PR)
-**Next**: Create PR to merge into `v3` branch (when ready)
+**Status**: ✅ **KB UI REFACTOR PHASES 1-2 COMPLETE** - Continue Phase 2 remaining items
+**Current**: S3 Vector validation fully implemented, OpenSearch Analyzer conditional
+**Next**: Hide chunking/parsing for SQL KBs, enhanced UX improvements
