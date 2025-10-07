@@ -867,6 +867,7 @@ const translation: typeof en = {
           note: '実際のコストは使用量とAWSの価格設定により異なる場合があります',
         },
       },
+      s3VectorLimitation: 'S3 Vector Storeはチャンクサイズが最大500トークンで、セマンティック検索のみをサポートします。',
       embeddingModel: {
         label: '埋め込みモデル',
         titan_v2: {
