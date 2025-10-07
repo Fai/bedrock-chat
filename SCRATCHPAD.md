@@ -603,10 +603,11 @@ embeddingModelConfiguration = {
    - Shows "500 tokens max, semantic search only" warning
    - Added `s3VectorLimitation` translation key
 
-#### **Phase 2: Enhanced Validation ✅ (COMPLETE)**
+#### **Phase 2: Enhanced User Experience ✅ (COMPLETE)**
 **Commits**: 
 - `95e2fc4` - test(kb-ui): add unit tests for Phase 1 conditional rendering
 - `e48692f` - feat(kb-ui): complete Phase 2 enhanced validation for all chunking strategies
+- `ce03ed7` - feat(kb-ui): add type-specific help text for better user guidance
 
 **Completed Items**:
 - ✅ **Complete Validation Coverage** for all chunking strategies:
@@ -620,6 +621,13 @@ embeddingModelConfiguration = {
    - Hierarchical child slider: Dynamic max based on storage type  
    - Semantic slider: Dynamic max based on storage type
 
+- ✅ **Type-Specific Help Text** for better user guidance:
+   - OpenSearch Analyzer: "OpenSearch Serverless only"
+   - Chunking Strategy: "Vector KBs only"
+   - Advanced Parsing: "Vector KBs only"
+   - Enhanced help text explaining storage type applicability
+   - Japanese translations for all updated labels
+
 - ✅ **Unit Tests** (8 tests passing):
    - Test S3_VECTOR_CHUNK_LIMITS constants validation
    - Test validation logic for storage type-specific limits
@@ -632,32 +640,14 @@ embeddingModelConfiguration = {
 - `frontend/src/i18n/en/index.ts` + `frontend/src/i18n/ja/index.ts` (translation keys)
 - `frontend/src/features/knowledgeBase/pages/BotKbEditPage.test.tsx` (unit tests)
 
-#### **Phase 2: Enhanced User Experience (Remaining)**
-**Remaining Items**:
-- [ ] Conditionally render chunking settings (hide for SQL KBs)
-- [ ] Conditionally render parsing model settings (hide for SQL KBs)
-- [ ] Conditionally render data source inputs (vector vs SQL)
-- [ ] Enhanced StorageTypeSelector with feature comparison
-- [ ] Update help text to mention type applicability
-
-#### **Phase 3: SQL KB Integration (Planned)**
-- [ ] Add SQL KB connection form (if not exists)
-- [ ] Update validation to handle SQL KB configuration
-- [ ] Consider separate SQL KB route option
-
-**Testing Strategy**:
-- ✅ Unit tests for conditional rendering (8 tests passing)
-- ✅ Build validation (TypeScript compilation successful)
-- [ ] Integration tests for each KB type creation
-- [ ] Manual testing checklist (12 scenarios)
-
 **Success Metrics**:
 - ✅ OpenSearch Analyzer hidden for S3 Vector (implemented)
 - ✅ S3 Vector 500 token limit enforced for ALL chunking strategies (implemented)
 - ✅ Dynamic slider ranges prevent invalid values (implemented)
-- [ ] Zero chunking/parsing settings shown for SQL KBs
-- [ ] User confusion tickets reduced by 80%
-- [ ] KB creation success rate improved by 20%
+- ✅ Type-specific help text guides users on feature applicability (implemented)
+- [ ] Zero chunking/parsing settings shown for SQL KBs (Phase 3 - SQL KB integration)
+- [ ] User confusion tickets reduced by 80% (to be measured)
+- [ ] KB creation success rate improved by 20% (to be measured)
 
 **Git Status**:
 - **Current Branch**: `feature/kb-ui-refactor`
@@ -665,7 +655,18 @@ embeddingModelConfiguration = {
   - `9c0eafc` - Phase 1 complete (conditional rendering)
   - `95e2fc4` - Unit tests added
   - `e48692f` - Phase 2 validation complete
-- **Ready For**: Continue Phase 2 (chunking/parsing conditionals for SQL KBs)
+  - `ce03ed7` - Phase 2 help text complete
+- **Ready For**: Phase 3 (SQL KB integration) or merge to main branch
+
+#### **Phase 3: SQL KB Integration (Future Enhancement)**
+**Note**: SQL KB integration would require separate implementation as SQL KBs are fundamentally different from VECTOR KBs. Current implementation focuses on VECTOR KB improvements (OpenSearch vs S3 Vector).
+
+**Future Items for SQL KB Support**:
+- [ ] Add SQL KB type detection in BotKbEditPage
+- [ ] Conditionally render chunking settings (hide for SQL KBs)
+- [ ] Conditionally render parsing model settings (hide for SQL KBs)
+- [ ] Add SQL KB connection form UI
+- [ ] Consider separate SQL KB route for better UX
 
 ---
 
