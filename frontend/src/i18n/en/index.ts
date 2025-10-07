@@ -873,7 +873,7 @@ How would you categorize this email?`,
         },
       },
       chunkingStrategy: {
-        label: 'Chunking Strategy',
+        label: 'Chunking Strategy (Vector KBs only)',
         default: {
           label: 'Default chunking',
           hint: "Automatically splits text into chunks of about 300 tokens in size, by default. If a document is less than or already 300 tokens, it's not split any futher.",
@@ -924,8 +924,8 @@ How would you categorize this email?`,
         hint: 'The percentile threshold of sentence distance/dissimilarity to draw breakpoints between sentences.',
       },
       opensearchAnalyzer: {
-        label: 'Analyzer (Tokenization, Normalization)',
-        hint: 'You can specify the analyzer to tokenize and normalize the documents registered as knowledge. Selecting an appropriate analyzer will improve search accuracy. Please choose the optimal analyzer that matches the language of your knowledge.',
+        label: 'Analyzer (OpenSearch Serverless only)',
+        hint: 'Configure text analysis for OpenSearch indexing. This setting only applies to OpenSearch Serverless storage and is not used with S3 Vector storage. Select the analyzer that matches your knowledge language for optimal search accuracy.',
         icu: {
           label: 'ICU analyzer',
           hint: 'For tokenization, {{tokenizer}} is used, and for normalization, {{normalizer}} is used.',
@@ -944,7 +944,7 @@ How would you categorize this email?`,
         not_specified: 'Not specified',
       },
       advancedParsing: {
-        label: 'Advanced Parsing',
+        label: 'Advanced Parsing (Vector KBs only)',
         description:
           'Select a model to use for advanced document parsing capabilities.',
         hint: 'Suitable for parsing more than standard text in supported document formats, including tables within PDFs with their structure intact. Additional costs are incurred for parsing using generative AI.',

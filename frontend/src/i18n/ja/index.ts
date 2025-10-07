@@ -878,7 +878,7 @@ const translation: typeof en = {
         },
       },
       chunkingStrategy: {
-        label: 'チャンキング戦略',
+        label: 'チャンキング戦略（ベクターKBのみ）',
         default: {
           label: 'デフォルトチャンキング',
           hint: 'チャンクに自動的に分割します。各チャンクは最大 300 トークンです。ドキュメントに含まれるトークンが 300 未満である場合、それ以上分割されません。',
@@ -929,8 +929,8 @@ const translation: typeof en = {
         hint: '文間にブレークポイントを描画するための文の距離/類似性のパーセンタイルしきい値を設定します。',
       },
       opensearchAnalyzer: {
-        label: 'アナライザー（トークナイズ・正規化）',
-        hint: 'ナレッジに登録した文書のトークナイズや正規化を行うアナライザーを指定します。 適切なアナライザーを選択することで、検索精度が向上します。 ナレッジの言語に合わせて、最適なアナライザーを選択してください。',
+        label: 'アナライザー（OpenSearch Serverlessのみ）',
+        hint: 'OpenSearchインデックス用のテキスト解析を設定します。この設定はOpenSearch Serverlessストレージにのみ適用され、S3 Vectorストレージでは使用されません。最適な検索精度のために、ナレッジの言語に合ったアナライザーを選択してください。',
         icu: {
           label: 'ICU analyzer',
           hint: 'トークナイズは {{tokenizer}} を利用し、正規化は {{normalizer}} を利用します。',
@@ -949,7 +949,7 @@ const translation: typeof en = {
         not_specified: '指定なし',
       },
       advancedParsing: {
-        label: '高度なドキュメント解析機能',
+        label: '高度なドキュメント解析機能（ベクターKBのみ）',
         description:
           'ドキュメントの高度なドキュメント解析機能に使用するモデルを選択してください。',
         hint: '構造が損なわれていないPDF内の表など、サポートされている文書形式の標準テキスト以外の解析に適しています。生成AIを使用した解析のために追加のコストが発生します。',
