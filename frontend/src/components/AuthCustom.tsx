@@ -85,8 +85,6 @@ const AuthCustom: React.FC<Props> = ({ children }) => {
           {cloneElement(children as ReactElement, { signOut: handleSignOut })}
         </>
       )}
-        </>
-      )}
     </>
   );
 };
