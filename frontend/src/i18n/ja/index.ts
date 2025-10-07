@@ -810,6 +810,18 @@ const translation: typeof en = {
       title: 'ナレッジの詳細設定',
       description:
         'ナレッジを設定するための埋め込みモデルの選択や、ナレッジとして追加したドキュメントの分割方法などを設定します。ボット作成後の変更はできません。',
+      resourceType: {
+        label: 'ナレッジベースタイプ',
+        hint: 'ベクターベースの文書検索またはSQLデータベースクエリを選択してください。ボット作成後は変更できません。',
+        vector: {
+          label: '文書検索（ベクター）',
+          description: 'アップロードされた文書をセマンティック類似性で検索',
+        },
+        sql: {
+          label: 'SQLデータベース（構造化データ）',
+          description: 'Amazon Redshiftの構造化データを自然言語でクエリ',
+        },
+      },
       storageType: {
         label: 'ベクトルストレージタイプ',
         description:

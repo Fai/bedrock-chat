@@ -804,6 +804,18 @@ How would you categorize this email?`,
       title: 'Knowledge Detail Settings',
       description:
         'Select the embedded model for configuring knowledge, and set the method for splitting documents added as knowledge. These settings cannot be changed after creating the bot.',
+      resourceType: {
+        label: 'Knowledge Base Type',
+        hint: 'Choose between vector-based document search or SQL database queries. This cannot be changed after creating the bot.',
+        vector: {
+          label: 'Document Search (Vector)',
+          description: 'Search through uploaded documents using semantic similarity',
+        },
+        sql: {
+          label: 'SQL Database (Structured Data)',
+          description: 'Query structured data in Amazon Redshift using natural language',
+        },
+      },
       storageType: {
         label: 'Vector Storage Type',
         description:

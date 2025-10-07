@@ -69,6 +69,7 @@ import {
   SearchType,
   WebCrawlingScope,
   VectorStorageType,
+  KnowledgeBaseResourceType,
 } from '../types';
 import StorageTypeSelector from '../components/StorageTypeSelector';
 import { toCamelCase } from '../../../utils/StringUtils';
@@ -134,6 +135,9 @@ const BotKbEditPage: React.FC = () => {
   const [knowledgeBaseType, setKnowledgeBaseType] = useState<
     'new' | 'existing'
   >('new');
+  
+  // KB Resource Type: VECTOR (OpenSearch/S3) vs SQL (Redshift)
+  const [kbResourceType, setKbResourceType] = useState<KnowledgeBaseResourceType>('VECTOR');
 
   // When loading an existing bot that already has a knowledge base id(s),
   // default the radio selection to 'existing' so the UI reflects the bot state.
@@ -2053,8 +2057,36 @@ const BotKbEditPage: React.FC = () => {
                   {t('knowledgeBaseSettings.description')}
                 </div>
 
-                {/* Storage Type Selector */}
+                {/* KB Resource Type Selector */}
                 {isNewBot && (
+                  <div className="mt-3">
+                    <div className="text-sm font-semibold">
+                      {t('knowledgeBaseSettings.resourceType.label')}
+                    </div>
+                    <div className="mt-2 flex gap-4">
+                      <RadioButton
+                        name="kbResourceType"
+                        value="VECTOR"
+                        checked={kbResourceType === 'VECTOR'}
+                        label={t('knowledgeBaseSettings.resourceType.vector.label')}
+                        onChange={() => setKbResourceType('VECTOR')}
+                      />
+                      <RadioButton
+                        name="kbResourceType"
+                        value="SQL"
+                        checked={kbResourceType === 'SQL'}
+                        label={t('knowledgeBaseSettings.resourceType.sql.label')}
+                        onChange={() => setKbResourceType('SQL')}
+                      />
+                    </div>
+                    <div className="text-xs text-aws-font-color-light/50 dark:text-aws-font-color-dark mt-1">
+                      {t('knowledgeBaseSettings.resourceType.hint')}
+                    </div>
+                  </div>
+                )}
+
+                {/* Storage Type Selector - Only for VECTOR KBs */}
+                {isNewBot && kbResourceType === 'VECTOR' && (
                   <div className="mt-3">
                     <StorageTypeSelector
                       selectedStorageType={storageType}
@@ -2063,52 +2095,63 @@ const BotKbEditPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="mt-3">
-                  <Select
-                    label={t('knowledgeBaseSettings.embeddingModel.label')}
-                    value={embeddingsModel}
-                    options={embeddingsModelOptions}
-                    onChange={(val) => {
-                      onChangeEmbeddingsModel(val as EmbeddingsModel);
-                    }}
-                    disabled={!isNewBot}
-                  />
-                </div>
-
-                <div className="mt-3">
-                  <Select
-                    label={t('knowledgeBaseSettings.advancedParsing.label')}
-                    value={parsingModel || 'disabled'}
-                    options={parsingModelOptions}
-                    onChange={(val) => {
-                      setParsingModel(val as ParsingModel);
-                    }}
-                    disabled={!isNewBot}
-                  />
-                  <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                    {t('knowledgeBaseSettings.advancedParsing.hint')}
+                {/* Embeddings Model - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && (
+                  <div className="mt-3">
+                    <Select
+                      label={t('knowledgeBaseSettings.embeddingModel.label')}
+                      value={embeddingsModel}
+                      options={embeddingsModelOptions}
+                      onChange={(val) => {
+                        onChangeEmbeddingsModel(val as EmbeddingsModel);
+                      }}
+                      disabled={!isNewBot}
+                    />
                   </div>
-                </div>
+                )}
 
-                <div className="mt-3">
-                  <Select
-                    label={t('knowledgeBaseSettings.chunkingStrategy.label')}
-                    value={chunkingStrategy}
-                    options={chunkingStrategyOptions}
-                    onChange={(val) => {
-                      setChunkingStrategy(val as ChunkingStrategy);
-                    }}
-                    disabled={!isNewBot}
-                  />
-                </div>
+                {/* Advanced Parsing - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && (
+                  <div className="mt-3">
+                    <Select
+                      label={t('knowledgeBaseSettings.advancedParsing.label')}
+                      value={parsingModel || 'disabled'}
+                      options={parsingModelOptions}
+                      onChange={(val) => {
+                        setParsingModel(val as ParsingModel);
+                      }}
+                      disabled={!isNewBot}
+                    />
+                    <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                      {t('knowledgeBaseSettings.advancedParsing.hint')}
+                    </div>
+                  </div>
+                )}
 
-                {/* S3 Vector Limitation Warning */}
-                {storageType === 'S3_VECTOR' && (
-                  <Alert severity="info" className="mt-2">
-                    <Trans i18nKey="knowledgeBaseSettings.s3VectorLimitation">
-                      S3 Vector Store has a maximum chunk size of 500 tokens and supports semantic search only.
-                    </Trans>
-                  </Alert>
+                {/* Chunking Strategy - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && (
+                  <>
+                    <div className="mt-3">
+                      <Select
+                        label={t('knowledgeBaseSettings.chunkingStrategy.label')}
+                        value={chunkingStrategy}
+                        options={chunkingStrategyOptions}
+                        onChange={(val) => {
+                          setChunkingStrategy(val as ChunkingStrategy);
+                        }}
+                        disabled={!isNewBot}
+                      />
+                    </div>
+
+                    {/* S3 Vector Limitation Warning */}
+                    {storageType === 'S3_VECTOR' && (
+                      <Alert severity="info" className="mt-2">
+                        <Trans i18nKey="knowledgeBaseSettings.s3VectorLimitation">
+                          S3 Vector Store has a maximum chunk size of 500 tokens and supports semantic search only.
+                        </Trans>
+                      </Alert>
+                    )}
+                  </>
                 )}
                 {chunkingStrategy === 'fixed_size' && (
                   <>
