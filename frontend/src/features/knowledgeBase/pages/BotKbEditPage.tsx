@@ -49,6 +49,7 @@ import {
   OPENSEARCH_ANALYZER,
   DEFAULT_SEARCH_CONFIG,
   DEFAULT_OPENSEARCH_ANALYZER,
+  S3_VECTOR_CHUNK_LIMITS,
   // DEFAULT_S3_VECTOR_KNOWLEDGEBASE, // Available for future use
 } from '../constants';
 import {
@@ -850,9 +851,13 @@ const BotKbEditPage: React.FC = () => {
   const onChangeEmbeddingsModel = useCallback(
     (value: EmbeddingsModel) => {
       setEmbeddingsModel(value);
-      // Update maxTokens based on the selected embeddings model
-      const maxEdgeFixed = EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[value];
-      const maxEdgeSemantic = EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[value];
+      // Update maxTokens based on the selected embeddings model and storage type
+      const maxEdgeFixed = storageType === 'S3_VECTOR'
+        ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+        : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[value];
+      const maxEdgeSemantic = storageType === 'S3_VECTOR'
+        ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+        : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[value];
       if (
         chunkingStrategy == 'fixed_size' &&
         fixedSizeParams.maxTokens > maxEdgeFixed
@@ -1004,12 +1009,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         fixedSizeParams.maxTokens >
-        EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+          : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'fixedSizeParams.maxTokens',
           t('validation.maxRange.message', {
-            size: EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+              : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
           })
         );
         return false;
@@ -2084,6 +2093,15 @@ const BotKbEditPage: React.FC = () => {
                     disabled={!isNewBot}
                   />
                 </div>
+
+                {/* S3 Vector Limitation Warning */}
+                {storageType === 'S3_VECTOR' && (
+                  <Alert severity="info" className="mt-2">
+                    <Trans i18nKey="knowledgeBaseSettings.s3VectorLimitation">
+                      S3 Vector Store has a maximum chunk size of 500 tokens and supports semantic search only.
+                    </Trans>
+                  </Alert>
+                )}
                 {chunkingStrategy === 'fixed_size' && (
                   <>
                     <div className="mx-4 mt-2">
@@ -2101,9 +2119,9 @@ const BotKbEditPage: React.FC = () => {
                         }
                         range={{
                           min: EDGE_FIXED_CHUNK_PARAMS.maxTokens.MIN,
-                          max: EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[
-                            embeddingsModel
-                          ],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+                            : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
                           step: EDGE_FIXED_CHUNK_PARAMS.maxTokens.STEP,
                         }}
                         onChange={(value) =>
@@ -2372,71 +2390,76 @@ const BotKbEditPage: React.FC = () => {
                   </>
                 )}
 
-                {isNewBot && (
-                  <div className="mt-3 grid gap-1">
-                    <Select
-                      label={t(
-                        'knowledgeBaseSettings.opensearchAnalyzer.label'
-                      )}
-                      value={analyzer}
-                      options={analyzerOptions}
-                      onChange={(val) => {
-                        setAnalyzer(val);
-                        setOpenSearchParams(OPENSEARCH_ANALYZER[val]);
-                      }}
-                      className="mt-2"
-                    />
-                    <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                      {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
-                    </div>
-                  </div>
-                )}
-                {!isNewBot && (
-                  <div className="mt-3 grid gap-1">
-                    <div className="text-sm">
-                      {t('knowledgeBaseSettings.opensearchAnalyzer.label')}
-                    </div>
-                    <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                      {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
-                    </div>
-                    <div
-                      className="grid grid-cols-[auto_1fr] gap-2 rounded 
-                      border border-aws-font-color-light/50 p-4 text-sm dark:border-aws-font-color-dark/50">
-                      <div>
-                        {t(
-                          'knowledgeBaseSettings.opensearchAnalyzer.tokenizer'
-                        )}
-                      </div>
-                      <div>
-                        {openSearchParams.analyzer?.tokenizer ??
-                          t(
-                            'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                {/* OpenSearch Analyzer - Only for OpenSearch Serverless */}
+                {storageType === 'OPENSEARCH_SERVERLESS' && (
+                  <>
+                    {isNewBot && (
+                      <div className="mt-3 grid gap-1">
+                        <Select
+                          label={t(
+                            'knowledgeBaseSettings.opensearchAnalyzer.label'
                           )}
+                          value={analyzer}
+                          options={analyzerOptions}
+                          onChange={(val) => {
+                            setAnalyzer(val);
+                            setOpenSearchParams(OPENSEARCH_ANALYZER[val]);
+                          }}
+                          className="mt-2"
+                        />
+                        <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                          {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
+                        </div>
                       </div>
-                      <div>
-                        {t(
-                          'knowledgeBaseSettings.opensearchAnalyzer.normalizer'
-                        )}
+                    )}
+                    {!isNewBot && (
+                      <div className="mt-3 grid gap-1">
+                        <div className="text-sm">
+                          {t('knowledgeBaseSettings.opensearchAnalyzer.label')}
+                        </div>
+                        <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                          {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
+                        </div>
+                        <div
+                          className="grid grid-cols-[auto_1fr] gap-2 rounded 
+                          border border-aws-font-color-light/50 p-4 text-sm dark:border-aws-font-color-dark/50">
+                          <div>
+                            {t(
+                              'knowledgeBaseSettings.opensearchAnalyzer.tokenizer'
+                            )}
+                          </div>
+                          <div>
+                            {openSearchParams.analyzer?.tokenizer ??
+                              t(
+                                'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                              )}
+                          </div>
+                          <div>
+                            {t(
+                              'knowledgeBaseSettings.opensearchAnalyzer.normalizer'
+                            )}
+                          </div>
+                          <div>
+                            {openSearchParams.analyzer?.characterFilters ??
+                              t(
+                                'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                              )}
+                          </div>
+                          <div>
+                            {t(
+                              'knowledgeBaseSettings.opensearchAnalyzer.token_filter'
+                            )}
+                          </div>
+                          <div className="grid gap-2">
+                            {openSearchParams.analyzer?.tokenFilters.join(', ') ??
+                              t(
+                                'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                              )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        {openSearchParams.analyzer?.characterFilters ??
-                          t(
-                            'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
-                          )}
-                      </div>
-                      <div>
-                        {t(
-                          'knowledgeBaseSettings.opensearchAnalyzer.token_filter'
-                        )}
-                      </div>
-                      <div className="grid gap-2">
-                        {openSearchParams.analyzer?.tokenFilters.join(', ') ??
-                          t(
-                            'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
-                          )}
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </ExpandableDrawerGroup>
 

@@ -64,6 +64,36 @@ export const S3_VECTOR_CONSTRAINTS = {
   FILTERABLE_METADATA_LIMIT: 2 * 1024,  // 2KB filterable metadata
 } as const;
 
+// S3 Vector specific chunk limits (500 token max)
+export const S3_VECTOR_CHUNK_LIMITS = {
+  FIXED_SIZE: {
+    maxTokens: {
+      MAX: 500,  // S3 Vector hard limit
+      MIN: 1,
+      STEP: 1,
+    },
+  },
+  HIERARCHICAL: {
+    maxParentTokenSize: {
+      MAX: 500,
+      MIN: 1,
+      STEP: 1,
+    },
+    maxChildTokenSize: {
+      MAX: 500,
+      MIN: 1,
+      STEP: 1,
+    },
+  },
+  SEMANTIC: {
+    maxTokens: {
+      MAX: 500,
+      MIN: 1,
+      STEP: 1,
+    },
+  },
+} as const;
+
 // Default OpenSearch KB (backward compatible - default storage type)
 export const DEFAULT_BEDROCK_KNOWLEDGEBASE: BedrockKnowledgeBase = {
   knowledgeBaseId: null,

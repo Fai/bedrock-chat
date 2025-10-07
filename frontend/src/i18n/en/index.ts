@@ -862,6 +862,7 @@ How would you categorize this email?`,
           note: 'Note: OpenSearch has additional compute costs (OCU) for indexing and queries. S3 Vectors has additional costs for query requests. Actual costs depend on usage patterns.',
         },
       },
+      s3VectorLimitation: 'S3 Vector Store has a maximum chunk size of 500 tokens and supports semantic search only.',
       embeddingModel: {
         label: 'Embeddings Model',
         titan_v2: {
