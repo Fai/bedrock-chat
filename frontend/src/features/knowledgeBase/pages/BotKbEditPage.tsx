@@ -2091,6 +2091,7 @@ const BotKbEditPage: React.FC = () => {
                     <StorageTypeSelector
                       selectedStorageType={storageType}
                       onStorageTypeChange={setStorageType}
+                      bedrockRegion={globalConfig?.bedrockRegion}
                     />
                   </div>
                 )}
