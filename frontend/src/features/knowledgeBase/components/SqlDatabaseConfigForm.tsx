@@ -1,32 +1,30 @@
-import React, { useMemo } from 'react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import InputText from '../../../components/InputText';
+import Textarea from '../../../components/Textarea';
 import { SqlDatabaseConfig } from '../types';
 
-type Props = {
+interface SqlDatabaseConfigFormProps {
   config: SqlDatabaseConfig;
   onChange: (config: SqlDatabaseConfig) => void;
-  errors?: Partial<Record<keyof SqlDatabaseConfig | 'fieldMapping', string>>;
-};
+  errors?: Record<string, string>;
+}
 
-const SqlDatabaseConfigForm: React.FC<Props> = ({
+const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
   config,
   onChange,
   errors = {},
 }) => {
-  const handleChange = <K extends keyof SqlDatabaseConfig>(
-    key: K,
-    value: SqlDatabaseConfig[K]
-  ) => {
+  const { t } = useTranslation();
+
+  const handleChange = (field: keyof SqlDatabaseConfig, value: string) => {
     onChange({
       ...config,
-      [key]: value,
+      [field]: value,
     });
   };
 
-  const handleFieldMappingChange = (
-    field: keyof SqlDatabaseConfig['fieldMapping'],
-    value: string
-  ) => {
+  const handleFieldMappingChange = (field: string, value: string) => {
     onChange({
       ...config,
       fieldMapping: {
@@ -36,125 +34,105 @@ const SqlDatabaseConfigForm: React.FC<Props> = ({
     });
   };
 
-  // Validate Redshift workgroup ARN format
-  const workgroupArnHint = useMemo(() => {
-    if (
-      config.workgroupArn &&
-      !config.workgroupArn.match(
-        /^arn:aws:redshift-serverless:[a-z0-9-]+:\d{12}:workgroup\/.+$/
-      )
-    ) {
-      return 'Expected format: arn:aws:redshift-serverless:REGION:ACCOUNT:workgroup/NAME';
-    }
-    return undefined;
-  }, [config.workgroupArn]);
-
-  // Validate secret ARN format
-  const secretArnHint = useMemo(() => {
-    if (
-      config.secretArn &&
-      !config.secretArn.match(
-        /^arn:aws:secretsmanager:[a-z0-9-]+:\d{12}:secret:.+$/
-      )
-    ) {
-      return 'Expected format: arn:aws:secretsmanager:REGION:ACCOUNT:secret/NAME';
-    }
-    return undefined;
-  }, [config.secretArn]);
-
   return (
-    <div className="flex flex-col gap-4">
-      <div className="text-sm text-dark-gray dark:text-light-gray">
-        Configure the connection to your Amazon Redshift Serverless database.
-        The database table must have columns for id, content, and metadata.
+    <div className="space-y-4" data-testid="sql-database-config">
+      <div>
+        <InputText
+          label={t('knowledgeBaseSettings.sql.workgroupName.label')}
+          value={config.workgroupName}
+          onChange={(value) => handleChange('workgroupName', value)}
+          placeholder={t('knowledgeBaseSettings.sql.workgroupName.placeholder')}
+          errorMessage={errors.workgroupName}
+          data-testid="workgroup-name-input"
+          required
+        />
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          {t('knowledgeBaseSettings.sql.workgroupName.help')}
+        </p>
       </div>
 
-      <InputText
-        label="Workgroup Name *"
-        value={config.workgroupName}
-        onChange={(value) => handleChange('workgroupName', value)}
-        placeholder="my-redshift-workgroup"
-        hint="The name of your Redshift Serverless workgroup"
-        errorMessage={errors.workgroupName}
-      />
+      <div>
+        <InputText
+          label={t('knowledgeBaseSettings.sql.databaseName.label')}
+          value={config.databaseName}
+          onChange={(value) => handleChange('databaseName', value)}
+          placeholder={t('knowledgeBaseSettings.sql.databaseName.placeholder')}
+          errorMessage={errors.databaseName}
+          data-testid="database-name-input"
+          required
+        />
+      </div>
 
-      <InputText
-        label="Workgroup ARN *"
-        value={config.workgroupArn}
-        onChange={(value) => handleChange('workgroupArn', value)}
-        placeholder="arn:aws:redshift-serverless:us-east-1:123456789012:workgroup/my-workgroup"
-        hint={
-          workgroupArnHint ||
-          'The full ARN of your Redshift Serverless workgroup'
-        }
-        errorMessage={errors.workgroupArn}
-      />
+      <div>
+        <InputText
+          label={t('knowledgeBaseSettings.sql.tableName.label')}
+          value={config.tableName}
+          onChange={(value) => handleChange('tableName', value)}
+          placeholder={t('knowledgeBaseSettings.sql.tableName.placeholder')}
+          errorMessage={errors.tableName}
+          data-testid="table-name-input"
+          required
+        />
+      </div>
 
-      <InputText
-        label="Database Name *"
-        value={config.databaseName}
-        onChange={(value) => handleChange('databaseName', value)}
-        placeholder="mydatabase"
-        hint="The name of the database containing your data"
-        errorMessage={errors.databaseName}
-      />
+      <div>
+        <InputText
+          label={t('knowledgeBaseSettings.sql.secretArn.label')}
+          value={config.secretArn}
+          onChange={(value) => handleChange('secretArn', value)}
+          placeholder={t('knowledgeBaseSettings.sql.secretArn.placeholder')}
+          errorMessage={errors.secretArn}
+          data-testid="secret-arn-input"
+          required
+        />
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+          {t('knowledgeBaseSettings.sql.secretArn.help')}
+        </p>
+      </div>
 
-      <InputText
-        label="Table/View Name *"
-        value={config.tableName}
-        onChange={(value) => handleChange('tableName', value)}
-        placeholder="my_table"
-        hint="The table or view name that Bedrock KB will query"
-        errorMessage={errors.tableName}
-      />
-
-      <InputText
-        label="Secret ARN *"
-        value={config.secretArn}
-        onChange={(value) => handleChange('secretArn', value)}
-        placeholder="arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret"
-        hint={
-          secretArnHint ||
-          'AWS Secrets Manager ARN containing Redshift credentials'
-        }
-        errorMessage={errors.secretArn}
-      />
-
-      <div className="mt-4 border-t pt-4 dark:border-aws-font-color-dark/30">
-        <div className="mb-2 text-sm font-semibold text-dark-gray dark:text-light-gray">
-          Field Mapping *
-        </div>
-        <div className="mb-3 text-xs text-gray dark:text-aws-font-color-dark">
-          Map your table columns to the required Bedrock Knowledge Base fields.
-          These mappings tell Bedrock how to interpret your data.
-        </div>
-
-        <div className="flex flex-col gap-3">
+      <div className="border-t pt-4">
+        <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+          {t('knowledgeBaseSettings.sql.fieldMapping.title')}
+        </h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {t('knowledgeBaseSettings.sql.fieldMapping.description')}
+        </p>
+        
+        <div className="grid grid-cols-2 gap-4">
           <InputText
-            label="ID Column"
+            label={t('knowledgeBaseSettings.sql.fieldMapping.id')}
             value={config.fieldMapping.id}
             onChange={(value) => handleFieldMappingChange('id', value)}
             placeholder="id"
-            hint="Column containing unique identifiers (primary key)"
-            errorMessage={errors.fieldMapping}
+            data-testid="field-mapping-id"
+            required
           />
-
+          
           <InputText
-            label="Content Column"
+            label={t('knowledgeBaseSettings.sql.fieldMapping.content')}
             value={config.fieldMapping.content}
             onChange={(value) => handleFieldMappingChange('content', value)}
             placeholder="content"
-            hint="Column containing the main text content for semantic search"
-            errorMessage={errors.fieldMapping}
+            data-testid="field-mapping-content"
+            required
           />
-
+          
           <InputText
-            label="Metadata Column"
+            label={t('knowledgeBaseSettings.sql.fieldMapping.metadata')}
             value={config.fieldMapping.metadata}
             onChange={(value) => handleFieldMappingChange('metadata', value)}
             placeholder="metadata"
-            hint="Column containing additional metadata (JSON format recommended)"
-            errorMessage={errors.fieldMapping}
+            data-testid="field-mapping-metadata"
+            required
+          />
+          
+          <InputText
+            label={t('knowledgeBaseSettings.sql.fieldMapping.embedding')}
+            value={config.fieldMapping.embedding}
+            onChange={(value) => handleFieldMappingChange('embedding', value)}
+            placeholder="embedding"
+            data-testid="field-mapping-embedding"
+            required
           />
         </div>
       </div>

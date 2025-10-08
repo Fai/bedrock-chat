@@ -70,8 +70,10 @@ import {
   WebCrawlingScope,
   VectorStorageType,
   KnowledgeBaseResourceType,
+  SqlDatabaseConfig,
 } from '../types';
 import StorageTypeSelector from '../components/StorageTypeSelector';
+import SqlDatabaseConfigForm from '../components/SqlDatabaseConfigForm';
 import { toCamelCase } from '../../../utils/StringUtils';
 import useGlobalConfig from '../../../hooks/useGlobalConfig';
 import useKnowledgeBaseApi from '../../../hooks/useKnowledgeBaseApi';
@@ -181,6 +183,21 @@ const BotKbEditPage: React.FC = () => {
   const [storageType, setStorageType] = useState<VectorStorageType>(
     'OPENSEARCH_SERVERLESS'
   );
+
+  // SQL Database Configuration
+  const [sqlDatabaseConfig, setSqlDatabaseConfig] = useState<SqlDatabaseConfig>({
+    workgroupName: '',
+    workgroupArn: '',
+    databaseName: '',
+    tableName: '',
+    secretArn: '',
+    fieldMapping: {
+      id: 'id',
+      content: 'content',
+      metadata: 'metadata',
+      embedding: 'embedding',
+    },
+  });
 
   const [hateThreshold, setHateThreshold] = useState<number>(0);
   const [insultsThreshold, setInsultsThreshold] = useState<number>(0);
@@ -1285,6 +1302,47 @@ const BotKbEditPage: React.FC = () => {
       return false;
     }
 
+    // SQL KB validation
+    if (kbResourceType === 'SQL') {
+      if (!sqlDatabaseConfig.workgroupName) {
+        setErrorMessages('workgroupName', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.workgroupArn) {
+        setErrorMessages('workgroupArn', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.databaseName) {
+        setErrorMessages('databaseName', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.tableName) {
+        setErrorMessages('tableName', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.secretArn) {
+        setErrorMessages('secretArn', t('validation.required'));
+        return false;
+      }
+      // Validate field mapping
+      if (!sqlDatabaseConfig.fieldMapping.id) {
+        setErrorMessages('fieldMapping.id', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.fieldMapping.content) {
+        setErrorMessages('fieldMapping.content', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.fieldMapping.metadata) {
+        setErrorMessages('fieldMapping.metadata', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.fieldMapping.embedding) {
+        setErrorMessages('fieldMapping.embedding', t('validation.required'));
+        return false;
+      }
+    }
+
     return (
       isValidGenerationConfigParam(maxTokens, 'maxTokens') &&
       isValidGenerationConfigParam(topK, 'topK') &&
@@ -1305,6 +1363,9 @@ const BotKbEditPage: React.FC = () => {
     topP,
     temperature,
     setErrorMessages,
+    kbResourceType,
+    sqlDatabaseConfig,
+    t,
     embeddingsModel,
     chunkingStrategy,
     fixedSizeParams,
@@ -1348,31 +1409,45 @@ const BotKbEditPage: React.FC = () => {
       conversationQuickStarters: conversationQuickStarters.filter(
         (qs) => qs.title !== '' && qs.example !== ''
       ),
-      bedrockKnowledgeBase: {
-        knowledgeBaseId,
-        existKnowledgeBaseId,
-        storageType,
-        embeddingsModel,
-        chunkingConfiguration: (() => {
-          switch (chunkingStrategy) {
-            case 'default':
-              return { chunkingStrategy: 'default' };
-            case 'fixed_size':
-              return fixedSizeParams;
-            case 'hierarchical':
-              return hierarchicalParams;
-            case 'semantic':
-              return semanticParams;
-            default:
-              return { chunkingStrategy: 'none' };
+      bedrockKnowledgeBase: kbResourceType === 'SQL' 
+        ? {
+            knowledgeBaseType: 'SQL',
+            databaseConfig: {
+              workgroupName: sqlDatabaseConfig.workgroupName,
+              workgroupArn: sqlDatabaseConfig.workgroupArn,
+              databaseName: sqlDatabaseConfig.databaseName,
+              tableName: sqlDatabaseConfig.tableName,
+              secretArn: sqlDatabaseConfig.secretArn,
+              fieldMapping: sqlDatabaseConfig.fieldMapping,
+            },
+            searchParams: searchParams,
+            embeddingModelArn: `arn:aws:bedrock:${globalConfig?.bedrockRegion}::foundation-model/amazon.titan-embed-text-v2:0`,
           }
-        })(),
-        openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
-        searchParams: searchParams,
-        parsingModel,
-        webCrawlingScope,
-        webCrawlingFilters,
-      },
+        : {
+            knowledgeBaseId,
+            existKnowledgeBaseId,
+            storageType,
+            embeddingsModel,
+            chunkingConfiguration: (() => {
+              switch (chunkingStrategy) {
+                case 'default':
+                  return { chunkingStrategy: 'default' };
+                case 'fixed_size':
+                  return fixedSizeParams;
+                case 'hierarchical':
+                  return hierarchicalParams;
+                case 'semantic':
+                  return semanticParams;
+                default:
+                  return { chunkingStrategy: 'none' };
+              }
+            })(),
+            openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
+            searchParams: searchParams,
+            parsingModel,
+            webCrawlingScope,
+            webCrawlingFilters,
+          },
       bedrockGuardrails: {
         isGuardrailEnabled:
           hateThreshold > 0 ||
@@ -1480,31 +1555,45 @@ const BotKbEditPage: React.FC = () => {
         conversationQuickStarters: conversationQuickStarters.filter(
           (qs) => qs.title !== '' && qs.example !== ''
         ),
-        bedrockKnowledgeBase: {
-          knowledgeBaseId,
-          existKnowledgeBaseId,
-          storageType,
-          embeddingsModel,
-          chunkingConfiguration: (() => {
-            switch (chunkingStrategy) {
-              case 'default':
-                return { chunkingStrategy: 'default' };
-              case 'fixed_size':
-                return fixedSizeParams;
-              case 'hierarchical':
-                return hierarchicalParams;
-              case 'semantic':
-                return semanticParams;
-              default:
-                return { chunkingStrategy: 'none' };
+        bedrockKnowledgeBase: kbResourceType === 'SQL' 
+          ? {
+              knowledgeBaseType: 'SQL',
+              databaseConfig: {
+                workgroupName: sqlDatabaseConfig.workgroupName,
+                workgroupArn: sqlDatabaseConfig.workgroupArn,
+                databaseName: sqlDatabaseConfig.databaseName,
+                tableName: sqlDatabaseConfig.tableName,
+                secretArn: sqlDatabaseConfig.secretArn,
+                fieldMapping: sqlDatabaseConfig.fieldMapping,
+              },
+              searchParams: searchParams,
+              embeddingModelArn: `arn:aws:bedrock:${globalConfig?.bedrockRegion}::foundation-model/amazon.titan-embed-text-v2:0`,
             }
-          })(),
-          openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
-          searchParams: searchParams,
-          parsingModel,
-          webCrawlingScope,
-          webCrawlingFilters,
-        },
+          : {
+              knowledgeBaseId,
+              existKnowledgeBaseId,
+              storageType,
+              embeddingsModel,
+              chunkingConfiguration: (() => {
+                switch (chunkingStrategy) {
+                  case 'default':
+                    return { chunkingStrategy: 'default' };
+                  case 'fixed_size':
+                    return fixedSizeParams;
+                  case 'hierarchical':
+                    return hierarchicalParams;
+                  case 'semantic':
+                    return semanticParams;
+                  default:
+                    return { chunkingStrategy: 'none' };
+                }
+              })(),
+              openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
+              searchParams: searchParams,
+              parsingModel,
+              webCrawlingScope,
+              webCrawlingFilters,
+            },
         bedrockGuardrails: {
           isGuardrailEnabled:
             hateThreshold > 0 ||
@@ -2132,6 +2221,17 @@ const BotKbEditPage: React.FC = () => {
                   </div>
                 )}
 
+                {/* SQL Database Configuration - Only for SQL KBs */}
+                {kbResourceType === 'SQL' && (
+                  <div className="mt-3">
+                    <SqlDatabaseConfigForm
+                      config={sqlDatabaseConfig}
+                      onChange={setSqlDatabaseConfig}
+                      errors={errors}
+                    />
+                  </div>
+                )}
+
                 {/* Storage Type Selector - Only for VECTOR KBs */}
                 {isNewBot && kbResourceType === 'VECTOR' && (
                   <div className="mt-3">
@@ -2140,6 +2240,15 @@ const BotKbEditPage: React.FC = () => {
                       onStorageTypeChange={setStorageType}
                       bedrockRegion={globalConfig?.bedrockRegion}
                     />
+                  </div>
+                )}
+
+                {/* Storage Type Immutability Warning for Existing Bots */}
+                {!isNewBot && kbResourceType === 'VECTOR' && (
+                  <div className="mt-3">
+                    <Alert severity="info">
+                      {t('knowledgeBaseSettings.storageType.immutable')}
+                    </Alert>
                   </div>
                 )}
 

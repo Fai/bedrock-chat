@@ -1,6 +1,39 @@
 // Vector storage backend type
 export type VectorStorageType = 'OPENSEARCH_SERVERLESS' | 'S3_VECTOR';
 
+// Knowledge Base resource type
+export type KnowledgeBaseResourceType = 'VECTOR' | 'SQL';
+
+// SQL database configuration
+export type SqlDatabaseConfig = {
+  workgroupName: string;
+  workgroupArn: string;
+  databaseName: string;
+  tableName: string;
+  secretArn: string;
+  fieldMapping: {
+    id: string;
+    content: string;
+    metadata: string;
+    embedding: string;
+  };
+};
+
+// SQL Knowledge Base type
+export type SqlKnowledgeBase = {
+  knowledgeBaseId: string | null;
+  knowledgeBaseType: 'SQL';
+  databaseConfig: SqlDatabaseConfig;
+  searchParams: SearchParams;
+  embeddingModelArn: string;
+};
+
+// S3 Vector specific configuration
+export type S3VectorConfig = {
+  vectorBucketArn?: string;  // Optional: Custom S3 bucket for vectors
+  indexName?: string;        // Optional: Custom index name
+};
+
 export type BedrockKnowledgeBase = {
   knowledgeBaseId: string | null;
   existKnowledgeBaseId: string | null;
@@ -12,8 +45,11 @@ export type BedrockKnowledgeBase = {
   embeddingsModel: EmbeddingsModel;
   chunkingConfiguration: ChunkingConfiguration;
 
-  // OpenSearch config - optional for S3_VECTOR storage
+  // OpenSearch config - only for OPENSEARCH_SERVERLESS storage
   openSearch?: OpenSearchParams | null;
+
+  // S3 Vector config - only for S3_VECTOR storage
+  s3Vector?: S3VectorConfig | null;
 
   searchParams: SearchParams;
   parsingModel?: ParsingModel;

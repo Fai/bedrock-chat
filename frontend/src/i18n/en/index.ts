@@ -820,6 +820,7 @@ How would you categorize this email?`,
         label: 'Vector Storage Type',
         description:
           'Choose the backend storage for your vector embeddings. This cannot be changed after creating the bot.',
+        immutable: 'Storage type cannot be changed after bot creation. Current storage type is displayed for reference only.',
         openSearchServerless: {
           title: 'OpenSearch Serverless',
           description: 'Production-ready vector search with sub-millisecond latency',
@@ -848,6 +849,48 @@ How would you categorize this email?`,
             chunkLimit: 'Max 500 tokens per chunk',
             latency: 'Sub-second latency (not sub-millisecond)',
           },
+          warning: {
+            title: 'S3 Vectors Preview Feature',
+            limitations: 'Key limitations: 500 token max, semantic search only',
+            bestFor: 'Best for: Development, testing, large datasets with cost optimization',
+          },
+        },
+        costComparison: {
+          title: 'Cost Comparison (1M vectors)',
+          openSearch: 'OpenSearch: ~$88/month',
+          s3Vectors: 'S3 Vectors: ~$0.13/month',
+          savings: '99.85% savings',
+          note: 'Costs vary by usage patterns and region',
+        },
+      },
+      sql: {
+        workgroupName: {
+          label: 'Redshift Workgroup Name',
+          placeholder: 'my-workgroup',
+          help: 'The name of your Redshift Serverless workgroup',
+        },
+        databaseName: {
+          label: 'Database Name',
+          placeholder: 'my_database',
+        },
+        tableName: {
+          label: 'Table Name',
+          placeholder: 'products',
+        },
+        secretArn: {
+          label: 'Secrets Manager ARN',
+          placeholder: 'arn:aws:secretsmanager:us-east-1:123456789012:secret:my-secret',
+          help: 'ARN of the AWS Secrets Manager secret containing database credentials',
+        },
+        fieldMapping: {
+          title: 'Field Mapping',
+          description: 'Map your table columns to the required Knowledge Base fields',
+          id: 'ID Field',
+          content: 'Content Field',
+          metadata: 'Metadata Field',
+          embedding: 'Embedding Field',
+        },
+      },
           warning: {
             previewTitle: 'Preview Feature',
             previewDescription:
