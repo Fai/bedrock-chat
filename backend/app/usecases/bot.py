@@ -166,7 +166,7 @@ def create_new_bot(user: User, bot_input: BotInput) -> BotOutput:
                 # Create a new SQL Knowledge Base
                 sql_config = SqlDatabaseConfigModel(
                     workgroup_name=sql_kb_input.database_config.workgroup_name,
-                    workgroup_arn=sql_kb_input.database_config.workgroup_name,
+                    workgroup_arn=sql_kb_input.database_config.workgroup_arn,
                     database_name=sql_kb_input.database_config.database_name,
                     table_name=sql_kb_input.database_config.table_name,
                     field_mapping=sql_kb_input.database_config.field_mapping,
