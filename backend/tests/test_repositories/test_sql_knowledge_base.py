@@ -75,16 +75,17 @@ class TestSqlKnowledgeBase(unittest.TestCase):
         self.assertEqual(call_kwargs["name"], "test-sql-kb")
         self.assertEqual(call_kwargs["roleArn"], "arn:aws:iam::123456789012:role/BedrockKbRole")
         self.assertEqual(call_kwargs["knowledgeBaseConfiguration"]["type"], "VECTOR")
-        self.assertEqual(call_kwargs["storageConfiguration"]["type"], "REDSHIFT")
+        self.assertEqual(call_kwargs["storageConfiguration"]["type"], "RDS")
 
-        # Verify Redshift configuration
-        redshift_config = call_kwargs["storageConfiguration"]["redshiftConfiguration"]
-        self.assertEqual(redshift_config["workgroupName"], "test-workgroup")
-        self.assertEqual(redshift_config["databaseName"], "test_database")
-        self.assertEqual(redshift_config["tableName"], "test_table")
-        self.assertEqual(redshift_config["fieldMapping"]["primaryKeyField"], "id")
-        self.assertEqual(redshift_config["fieldMapping"]["textField"], "content")
-        self.assertEqual(redshift_config["fieldMapping"]["metadataField"], "metadata")
+        # Verify RDS configuration
+        rds_config = call_kwargs["storageConfiguration"]["rdsConfiguration"]
+        self.assertEqual(rds_config["resourceArn"], "arn:aws:redshift-serverless:us-east-1:123456789012:workgroup/test-workgroup")
+        self.assertEqual(rds_config["databaseName"], "test_database")
+        self.assertEqual(rds_config["tableName"], "test_table")
+        self.assertEqual(rds_config["fieldMapping"]["primaryKeyField"], "id")
+        self.assertEqual(rds_config["fieldMapping"]["vectorField"], "embedding")
+        self.assertEqual(rds_config["fieldMapping"]["textField"], "content")
+        self.assertEqual(rds_config["fieldMapping"]["metadataField"], "metadata")
 
         mock_client.start_ingestion_job.assert_called_once_with(
             knowledgeBaseId="test-kb-123", dataSourceId="test-ds-456"

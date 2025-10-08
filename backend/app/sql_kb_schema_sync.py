@@ -161,8 +161,8 @@ def update_kb_schema(
         # Get existing configuration
         kb_config = kb['knowledgeBaseConfiguration']
         sql_config = kb_config['sqlKnowledgeBaseConfiguration']
-        redshift_config = sql_config['redshiftConfiguration']
-        query_gen_config = redshift_config.get('queryGenerationConfiguration', {})
+        rds_config = sql_config['rdsConfiguration']
+        query_gen_config = rds_config.get('queryGenerationConfiguration', {})
 
         # Update generationContext with new tables
         generation_context = query_gen_config.get('generationContext', {})
@@ -178,7 +178,7 @@ def update_kb_schema(
         if 'executionTimeoutSeconds' not in query_gen_config:
             query_gen_config['executionTimeoutSeconds'] = 60
 
-        redshift_config['queryGenerationConfiguration'] = query_gen_config
+        rds_config['queryGenerationConfiguration'] = query_gen_config
 
         # Update KB
         logger.info(f"Updating KB {knowledge_base_id} with {len(tables_config)} tables")

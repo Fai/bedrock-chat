@@ -57,14 +57,15 @@ def create_sql_knowledge_base(
                 },
             },
             storageConfiguration={
-                "type": "REDSHIFT",
-                "redshiftConfiguration": {
-                    "workgroupName": sql_config.workgroup_name,
+                "type": "RDS",
+                "rdsConfiguration": {
+                    "resourceArn": sql_config.workgroup_arn,
                     "databaseName": sql_config.database_name,
                     "tableName": sql_config.table_name,
                     "credentialsSecretArn": sql_config.secret_arn,
                     "fieldMapping": {
                         "primaryKeyField": sql_config.field_mapping.get("id", "id"),
+                        "vectorField": sql_config.field_mapping.get("embedding", "embedding"),
                         "textField": sql_config.field_mapping.get(
                             "content", "content"
                         ),
