@@ -74,6 +74,7 @@ import {
 import StorageTypeSelector from '../components/StorageTypeSelector';
 import { toCamelCase } from '../../../utils/StringUtils';
 import useGlobalConfig from '../../../hooks/useGlobalConfig';
+import useKnowledgeBaseApi from '../../../hooks/useKnowledgeBaseApi';
 
 const edgeGenerationParams = EDGE_GENERATION_PARAMS;
 
@@ -87,6 +88,7 @@ const BotKbEditPage: React.FC = () => {
   const { availableTools } = useAgent();
   const { getGlobalConfig } = useGlobalConfig();
   const { data: globalConfig } = getGlobalConfig();
+  const { getKnowledgeBaseDetails } = useKnowledgeBaseApi();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -146,6 +148,28 @@ const BotKbEditPage: React.FC = () => {
       setKnowledgeBaseType('existing');
     }
   }, [existKnowledgeBaseId, knowledgeBaseType]);
+
+  // Sync KB settings when existKnowledgeBaseId changes
+  useEffect(() => {
+    if (existKnowledgeBaseId && paramsBotId === undefined) { // Only for new bots
+      const fetchKBDetails = async () => {
+        try {
+          const response = await getKnowledgeBaseDetails(existKnowledgeBaseId);
+          const kbType = response.type;
+          if (kbType === 'SQL') {
+            setKbResourceType('SQL');
+          } else {
+            setKbResourceType('VECTOR');
+          }
+        } catch (error) {
+          console.error('Failed to fetch KB details:', error);
+          // Default to VECTOR if fetch fails
+          setKbResourceType('VECTOR');
+        }
+      };
+      fetchKBDetails();
+    }
+  }, [existKnowledgeBaseId, paramsBotId, getKnowledgeBaseDetails]);
 
   const disabledKnowledgeEdit = useMemo(() => {
     return !!existKnowledgeBaseId;

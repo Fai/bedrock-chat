@@ -3,6 +3,7 @@ from typing import Any, Dict, Literal
 
 from app.dependencies import check_creating_bot_allowed
 from app.repositories.custom_bot import find_bot_by_id
+from app.repositories.knowledge_base import get_knowledge_base_info
 from app.routes.schemas.bot import (
     ActiveModelsOutput,
     Agent,
@@ -45,7 +46,7 @@ from app.usecases.bot import (
     remove_uploaded_file,
 )
 from app.user import User
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, HTTPException
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -331,3 +332,17 @@ def delete_knowledge_base(request: Request, bot_id: str, knowledge_base_id: str)
     else:
         logger.error(f"Failed to delete SQL KB {knowledge_base_id}")
         return {"success": False, "message": f"Failed to delete Knowledge Base {knowledge_base_id}"}
+
+
+@router.get("/knowledge-base/{knowledge_base_id}")
+def get_knowledge_base_details(knowledge_base_id: str):
+    """Get knowledge base configuration details."""
+    try:
+        kb_info = get_knowledge_base_info(knowledge_base_id)
+        return {
+            "knowledgeBaseId": knowledge_base_id,
+            "type": kb_info.knowledge_base.knowledge_base_configuration.type
+        }
+    except Exception as e:
+        logger.error(f"Failed to get KB details for {knowledge_base_id}: {e}")
+        raise HTTPException(status_code=404, detail=f"Knowledge Base {knowledge_base_id} not found")
