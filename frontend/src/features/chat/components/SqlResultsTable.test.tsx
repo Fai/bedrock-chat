@@ -15,11 +15,11 @@ describe('SqlResultsTable', () => {
   it('renders table with correct data', () => {
     render(<SqlResultsTable results={mockResults} />);
 
-    // Check headers
-    expect(screen.getByText('ID')).toBeInTheDocument();
-    expect(screen.getByText('NAME')).toBeInTheDocument();
-    expect(screen.getByText('AGE')).toBeInTheDocument();
-    expect(screen.getByText('EMAIL')).toBeInTheDocument();
+    // Check headers (rendered as lowercase but styled as uppercase)
+    expect(screen.getByText('id')).toBeInTheDocument();
+    expect(screen.getByText('name')).toBeInTheDocument();
+    expect(screen.getByText('age')).toBeInTheDocument();
+    expect(screen.getByText('email')).toBeInTheDocument();
 
     // Check data
     expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -139,8 +139,8 @@ describe('SqlResultsTable', () => {
     render(<SqlResultsTable results={customResults} />);
 
     // Should only show columns from first row
-    expect(screen.getByText('CUSTOMCOL1')).toBeInTheDocument();
-    expect(screen.getByText('CUSTOMCOL2')).toBeInTheDocument();
-    expect(screen.queryByText('EXTRACOL')).not.toBeInTheDocument();
+    expect(screen.getByText('customCol1')).toBeInTheDocument();
+    expect(screen.getByText('customCol2')).toBeInTheDocument();
+    expect(screen.queryByText('extraCol')).not.toBeInTheDocument();
   });
 });

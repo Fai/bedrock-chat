@@ -1,0 +1,60 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, v3 ]
+  pull_request:
+    branches: [ main, v3 ]
+
+jobs:
+  e2e-tests:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install frontend dependencies
+      working-directory: ./frontend
+      run: npm ci
+    
+    - name: Build frontend
+      working-directory: ./frontend
+      run: npm run build
+    
+    - name: Install E2E dependencies
+      working-directory: ./e2e
+      run: npm ci
+    
+    - name: Install Playwright Browsers
+      working-directory: ./e2e
+      run: npx playwright install --with-deps
+    
+    - name: Start frontend dev server
+      working-directory: ./frontend
+      run: npm run preview &
+      env:
+        CI: true
+    
+    - name: Wait for server
+      run: npx wait-on http://localhost:4173
+    
+    - name: Run Playwright tests
+      working-directory: ./e2e
+      run: npx playwright test
+      env:
+        BASE_URL: http://localhost:4173
+    
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: e2e/playwright-report/
+        retention-days: 30
