@@ -65,8 +65,22 @@ def create_s3_vector_knowledge_base(
         chunking_config = _build_chunking_configuration(kb_config.chunking_configuration)
 
         # Create Knowledge Base with S3 Vector storage
-        # Using Quick Create: Bedrock auto-creates vector bucket and index
-        # All s3VectorsConfiguration parameters are optional for Quick Create
+        # Support both Quick Create (auto-provisioned) and custom bucket configuration
+        s3_vectors_config = {}
+        
+        # Add custom bucket configuration if provided
+        if hasattr(kb_config, 's3_vector') and kb_config.s3_vector:
+            if hasattr(kb_config.s3_vector, 'vector_bucket_arn') and kb_config.s3_vector.vector_bucket_arn:
+                s3_vectors_config["vectorBucketArn"] = kb_config.s3_vector.vector_bucket_arn
+                logger.info(f"  - Using custom vector bucket: {kb_config.s3_vector.vector_bucket_arn}")
+            
+            if hasattr(kb_config.s3_vector, 'index_name') and kb_config.s3_vector.index_name:
+                s3_vectors_config["indexName"] = kb_config.s3_vector.index_name
+                logger.info(f"  - Using custom index name: {kb_config.s3_vector.index_name}")
+        
+        if not s3_vectors_config:
+            logger.info("  - Using Quick Create: Bedrock will auto-create vector bucket and index")
+
         response = client.create_knowledge_base(
             name=kb_name,
             description=f"S3 Vector Knowledge Base for bot {bot_id}",
@@ -85,13 +99,7 @@ def create_s3_vector_knowledge_base(
             },
             storageConfiguration={
                 "type": "S3_VECTORS",  # Correct type for S3 Vectors
-                "s3VectorsConfiguration": {
-                    # All parameters optional for Quick Create
-                    # Bedrock auto-creates vector bucket and index
-                    # vectorBucketArn: (optional) ARN of S3 bucket for vector storage
-                    # indexArn: (optional) ARN of vector index
-                    # indexName: (optional) Name of vector index
-                }
+                "s3VectorsConfiguration": s3_vectors_config
             },
         )
 
@@ -228,15 +236,23 @@ def _build_chunking_configuration(chunking_config: Any) -> dict:
 
     Returns:
         Bedrock API chunking configuration dict
+        
+    Raises:
+        ValueError: If token limits exceed S3 Vector constraints
     """
     strategy = chunking_config.chunking_strategy
+
+    # S3 Vector token limit validation
+    def _validate_s3_vector_tokens(tokens: int, field_name: str):
+        if tokens > 500:
+            raise ValueError(f"S3 Vector storage has a maximum limit of 500 tokens per chunk. {field_name} cannot exceed 500 tokens.")
 
     if strategy == "default":
         return {
             "chunkingStrategy": "HIERARCHICAL",  # Bedrock's default hierarchical chunking
             "hierarchicalChunkingConfiguration": {
                 "levelConfigurations": [
-                    {"maxTokens": 1500},  # Parent chunks
+                    {"maxTokens": 500},  # S3 Vector limit - Parent chunks
                     {"maxTokens": 300},   # Child chunks
                 ],
                 "overlapTokens": 60,
@@ -244,31 +260,43 @@ def _build_chunking_configuration(chunking_config: Any) -> dict:
         }
 
     elif strategy == "fixed_size":
+        max_tokens = chunking_config.max_tokens or 300
+        _validate_s3_vector_tokens(max_tokens, "maxTokens")
+        
         return {
             "chunkingStrategy": "FIXED_SIZE",
             "fixedSizeChunkingConfiguration": {
-                "maxTokens": chunking_config.max_tokens or 300,
+                "maxTokens": max_tokens,
                 "overlapPercentage": chunking_config.overlap_percentage or 20,
             },
         }
 
     elif strategy == "hierarchical":
+        parent_tokens = chunking_config.max_parent_token_size or 1500
+        child_tokens = chunking_config.max_child_token_size or 300
+        
+        _validate_s3_vector_tokens(parent_tokens, "maxParentTokenSize")
+        _validate_s3_vector_tokens(child_tokens, "maxChildTokenSize")
+        
         return {
             "chunkingStrategy": "HIERARCHICAL",
             "hierarchicalChunkingConfiguration": {
                 "levelConfigurations": [
-                    {"maxTokens": chunking_config.max_parent_token_size or 1500},
-                    {"maxTokens": chunking_config.max_child_token_size or 300},
+                    {"maxTokens": parent_tokens},
+                    {"maxTokens": child_tokens},
                 ],
                 "overlapTokens": chunking_config.overlap_tokens or 60,
             },
         }
 
     elif strategy == "semantic":
+        max_tokens = chunking_config.max_tokens or 300
+        _validate_s3_vector_tokens(max_tokens, "maxTokens")
+        
         return {
             "chunkingStrategy": "SEMANTIC",
             "semanticChunkingConfiguration": {
-                "maxTokens": chunking_config.max_tokens or 300,
+                "maxTokens": max_tokens,
                 "bufferSize": chunking_config.buffer_size or 0,
                 "breakpointPercentileThreshold": chunking_config.breakpoint_percentile_threshold or 95,
             },
