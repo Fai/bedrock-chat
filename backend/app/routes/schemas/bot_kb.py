@@ -37,11 +37,11 @@ type_os_token_filter = Literal[
 
 # Knowledge Base Type
 # Ref: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_KnowledgeBaseConfiguration.html#bedrock-Type-agent_KnowledgeBaseConfiguration-type
-type_kb_resource_type = Literal["VECTOR", "KENDRA", "SQL"]
+type_kb_resource_type = Literal["VECTOR", "KENDRA", "SQL", "AURORA_VECTOR"]
 
 # Vector Store Type
 # Determines the backend storage for vector embeddings
-type_kb_storage_type = Literal["OPENSEARCH_SERVERLESS", "S3_VECTOR"]
+type_kb_storage_type = Literal["OPENSEARCH_SERVERLESS", "S3_VECTOR", "AURORA_VECTOR"]
 
 
 class SearchParams(BaseSchema):
@@ -217,4 +217,90 @@ class SqlQueryOutput(BaseSchema):
     sql_query: str | None = Field(default=None, description="Generated SQL query")
     results: list[dict] | None = Field(
         default=None, description="Structured query results"
+    )
+
+
+# Aurora Vector Knowledge Base Schemas
+class AuroraVectorConfig(BaseSchema):
+    """Configuration for Aurora PostgreSQL pgvector connection"""
+
+    cluster_arn: str = Field(..., description="Aurora cluster ARN")
+    cluster_name: str = Field(..., description="Aurora cluster name for display")
+    database_name: str = Field(..., description="Database name")
+    table_name: str = Field(
+        ..., description="Table name (e.g., bedrock_integration.kb_vectors)"
+    )
+    secret_arn: str = Field(
+        ..., description="Secrets Manager ARN with credentials"
+    )
+    embeddings_model: str = Field(
+        default="titan_v2", description="Embedding model (titan_v2, cohere_multilingual_v3)"
+    )
+    embedding_dimensions: int = Field(
+        default=1024, description="Vector dimensions"
+    )
+
+
+class AuroraVectorKnowledgeBaseInput(BaseSchema):
+    """Input schema for creating Aurora Vector Knowledge Base"""
+
+    knowledge_base_type: Literal["AURORA_VECTOR"] = "AURORA_VECTOR"
+    aurora_config: AuroraVectorConfig
+    chunking_configuration: (
+        DefaultParams
+        | FixedSizeParams
+        | HierarchicalParams
+        | SemanticParams
+        | NoneParams
+    )
+    search_params: SearchParams
+    parsing_model: type_kb_parsing_model = "anthropic.claude-3-haiku-v1"
+    knowledge_base_id: str | None = Field(
+        default=None, description="Existing KB ID if updating"
+    )
+
+
+class AuroraVectorKnowledgeBaseOutput(BaseSchema):
+    """Output schema for Aurora Vector Knowledge Base"""
+
+    knowledge_base_type: Literal["AURORA_VECTOR"] = "AURORA_VECTOR"
+    aurora_config: AuroraVectorConfig
+    chunking_configuration: (
+        DefaultParams
+        | FixedSizeParams
+        | HierarchicalParams
+        | SemanticParams
+        | NoneParams
+        | None
+    )
+    search_params: SearchParams
+    parsing_model: type_kb_parsing_model
+    knowledge_base_id: str | None = None
+    data_source_ids: list[str] | None = None
+    status: Literal["CREATING", "ACTIVE", "DELETING", "UPDATING", "FAILED"] | None = (
+        None
+    )
+
+
+class AuroraVectorQueryInput(BaseSchema):
+    """Input for querying Aurora Vector Knowledge Base"""
+
+    query: str = Field(..., description="Natural language query")
+    max_results: int = Field(default=5, description="Maximum results to return")
+    min_similarity_score: float = Field(
+        default=0.0, description="Minimum similarity score threshold"
+    )
+    metadata_filter: dict | None = Field(
+        default=None, description="Optional metadata filters"
+    )
+
+
+class AuroraVectorQueryOutput(BaseSchema):
+    """Output from Aurora Vector Knowledge Base query"""
+
+    citations: list[dict] = Field(..., description="Retrieved documents with scores")
+    total_results: int = Field(..., description="Total number of results")
+    knowledge_base_id: str = Field(..., description="Knowledge base ID")
+    query_latency_ms: int | None = Field(
+        default=None, description="Query latency in milliseconds"
     )

@@ -30,7 +30,6 @@ from pydantic import (
     create_model,
     field_validator,
     model_validator,
-    validator,
 )
 
 if TYPE_CHECKING:
@@ -113,14 +112,16 @@ class InternetTool(BaseSchema):
     firecrawl_config: Optional[FirecrawlConfig] | None = None
 
     @field_validator("search_engine")
+    @classmethod
     def validate_search_engine(cls, v):
         if v not in ["duckduckgo", "firecrawl"]:
             raise ValueError(f"Invalid search engine: {v}")
         return v
 
-    @validator("firecrawl_config")
-    def validate_firecrawl_config(cls, v, values):
-        if values.get("search_engine") == "firecrawl" and v is None:
+    @field_validator("firecrawl_config")
+    @classmethod
+    def validate_firecrawl_config(cls, v, info):
+        if info.data.get("search_engine") == "firecrawl" and v is None:
             raise ValueError(
                 "Firecrawl config is required when search engine is firecrawl"
             )
@@ -168,10 +169,13 @@ class Knowledge(BaseSchema):
     filenames: list[str]
     s3_urls: list[str]
 
-    @validator("s3_urls", each_item=True)
+    @field_validator("s3_urls")
+    @classmethod
     def validate_s3_url(cls, v):
-        if not v.startswith("s3://"):
-            raise ValueError(f"Invalid S3 URL format: {v}")
+        for url in v:
+            if not url.startswith("s3://"):
+                raise ValueError(f"Invalid S3 URL: {url}")
+        return v
 
         url_parts = v.replace("s3://", "").split("/")
         if len(url_parts) < 1:

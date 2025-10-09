@@ -246,9 +246,9 @@ class TestS3VectorKB(unittest.TestCase):
         # Update config with hierarchical chunking
         self.kb_config.chunking_configuration = HierarchicalParamsModel(
             chunking_strategy="hierarchical",
-            max_parent_token_size=1500,
-            max_child_token_size=300,
-            overlap_tokens=60,
+            max_parent_token_size=400,
+            max_child_token_size=200,
+            overlap_tokens=50,
         )
 
         mock_client = MagicMock()
@@ -273,10 +273,10 @@ class TestS3VectorKB(unittest.TestCase):
         chunking_config = call_kwargs["vectorIngestionConfiguration"]["chunkingConfiguration"]
         self.assertEqual(chunking_config["chunkingStrategy"], "HIERARCHICAL")
         level_configs = chunking_config["hierarchicalChunkingConfiguration"]["levelConfigurations"]
-        self.assertEqual(level_configs[0]["maxTokens"], 1500)
-        self.assertEqual(level_configs[1]["maxTokens"], 300)
+        self.assertEqual(level_configs[0]["maxTokens"], 400)
+        self.assertEqual(level_configs[1]["maxTokens"], 200)
         self.assertEqual(
-            chunking_config["hierarchicalChunkingConfiguration"]["overlapTokens"], 60
+            chunking_config["hierarchicalChunkingConfiguration"]["overlapTokens"], 50
         )
 
     @patch.dict(

@@ -33,6 +33,9 @@ bedrockChatParams.set("default", {
   tokenValidMinutes: 30,
   alternateDomainName: "",
   hostedZoneId: "",
+  enableAuroraKb: false,  // Disabled by default
+  auroraKbMinCapacity: 0.5,  // 0.5 ACU minimum
+  auroraKbMaxCapacity: 4,    // 4 ACU maximum
   devAccessIamRoleArn: ""
 });
 
@@ -41,6 +44,9 @@ bedrockChatParams.set("dev", {
   allowedIpV4AddressRanges: ["0.0.0.0/1", "128.0.0.0/1"],
   enableRagReplicas: false, // Cost-saving for dev environment
   enableBotStoreReplicas: false, // Cost-saving for dev environment
+  enableAuroraKb: true,  // Enable for development testing
+  auroraKbMinCapacity: 0.5,  // Minimum for cost savings
+  auroraKbMaxCapacity: 2,    // Lower max for dev
 });
 
 bedrockChatParams.set("prod", {

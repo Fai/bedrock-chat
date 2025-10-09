@@ -33,11 +33,14 @@ class TestConversationRepository(unittest.TestCase):
     def setUp(self):
         self.patcher1 = patch("boto3.resource")
         self.patcher2 = patch("app.repositories.conversation.s3_client")
+        self.patcher3 = patch("app.repositories.conversation.get_conversation_table_client")
         self.mock_boto3_resource = self.patcher1.start()
         self.mock_s3_client = self.patcher2.start()
+        self.mock_get_table_client = self.patcher3.start()
 
         self.mock_table = MagicMock()
         self.mock_boto3_resource.return_value.Table.return_value = self.mock_table
+        self.mock_get_table_client.return_value = self.mock_table
 
         # Set up environment variables
         os.environ["CONVERSATION_TABLE_NAME"] = "test-table"
@@ -52,6 +55,7 @@ class TestConversationRepository(unittest.TestCase):
     def tearDown(self):
         self.patcher1.stop()
         self.patcher2.stop()
+        self.patcher3.stop()
         os.environ.pop("CONVERSATION_TABLE_NAME", None)
         os.environ.pop("CONVERSATION_BUCKET_NAME", None)
         os.environ.pop("LARGE_MESSAGE_BUCKET", None)

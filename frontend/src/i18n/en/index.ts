@@ -867,6 +867,24 @@ How would you categorize this email?`,
           regionalAvailability:
             'S3 Vectors is only available in: {{regions}}. Your current Bedrock region is {{currentRegion}}.',
         },
+        auroraPostgreSQL: {
+          title: 'Aurora PostgreSQL',
+          description: 'Relational database with vector search capabilities',
+          costLevel: '~$44-100/month per cluster',
+          features: {
+            costEffective: '40-65% cost reduction vs Redshift',
+            lowLatency: 'Sub-100ms query latency',
+            relational: 'Full SQL database capabilities',
+            scalable: 'Auto-scaling with Aurora Serverless v2',
+            multiTenant: 'Multi-tenant support with RLS',
+          },
+          requirements: {
+            version: 'Aurora PostgreSQL 16.4+',
+            extension: 'pgvector 0.5.0+ extension',
+            schema: 'Specific table schema required',
+            setup: 'Manual cluster setup required',
+          },
+        },
         costComparison: {
           title: 'Storage Cost Comparison (1M vectors @ 1024 dimensions)',
           openSearch: '~$88/month',

@@ -7,7 +7,7 @@ from app.routes.schemas.conversation import type_model_name
 from app.utils import get_bedrock_runtime_client
 from duckduckgo_search import DDGS
 from firecrawl.firecrawl import FirecrawlApp
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -23,14 +23,14 @@ class InternetSearchInput(BaseModel):
         description="Retrieve only the most recent results, for example `1w` only returns the results from the last week. Units are 'd' (day), 'w' (week), 'm' (month), 'y' (year). Use empty string to retrieve all results."
     )
 
-    @root_validator(pre=True)
+    @model_validator(mode='before')
+    @classmethod
     def validate_locale(cls, values):
         locale = values.get("locale")
         # Basic validation for locale format
         if not locale or locale.count("-") != 1:
-            # Get the default value from the field definition
-            default_locale = cls.__fields__["locale"].default
-            values["locale"] = default_locale
+            # Set default value
+            values["locale"] = "en-us"
         return values
 
 

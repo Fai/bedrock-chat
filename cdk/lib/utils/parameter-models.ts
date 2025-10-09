@@ -114,6 +114,11 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
   // If not configured (empty array), all models are available
   globalAvailableModels: z.array(z.string()).default([]),
 
+  // Aurora Vector Knowledge Base configuration
+  enableAuroraKb: z.boolean().default(false),
+  auroraKbMinCapacity: z.number().default(0.5),
+  auroraKbMaxCapacity: z.number().default(4),
+
   // debug parameter
   devAccessIamRoleArn: z.string().default("")
 });
@@ -242,6 +247,9 @@ export function resolveBedrockChatParameters(
     enableBotStoreReplicas: app.node.tryGetContext("EnableBotStoreReplicas"),
     botStoreLanguage: app.node.tryGetContext("botStoreLanguage"),
     globalAvailableModels: app.node.tryGetContext("globalAvailableModels"),
+    enableAuroraKb: app.node.tryGetContext("enableAuroraKb"),
+    auroraKbMinCapacity: app.node.tryGetContext("auroraKbMinCapacity"),
+    auroraKbMaxCapacity: app.node.tryGetContext("auroraKbMaxCapacity"),
     devAccessIamRoleArn: app.node.tryGetContext("devAccessIamRoleArn"),
   };
 

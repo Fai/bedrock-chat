@@ -1,5 +1,5 @@
 // Vector storage backend type
-export type VectorStorageType = 'OPENSEARCH_SERVERLESS' | 'S3_VECTOR';
+export type VectorStorageType = 'OPENSEARCH_SERVERLESS' | 'S3_VECTOR' | 'AURORA_POSTGRESQL';
 
 // Knowledge Base resource type
 export type KnowledgeBaseResourceType = 'VECTOR' | 'SQL';
@@ -34,6 +34,15 @@ export type S3VectorConfig = {
   indexName?: string;        // Optional: Custom index name
 };
 
+// Aurora PostgreSQL specific configuration
+export type AuroraPostgreSQLConfig = {
+  clusterArn: string;        // Aurora cluster ARN
+  clusterName: string;       // Display name
+  databaseName: string;      // Database name
+  tableName: string;         // Table name (e.g., bedrock_integration.kb_vectors)
+  secretArn: string;         // Secrets Manager ARN with credentials
+};
+
 export type BedrockKnowledgeBase = {
   knowledgeBaseId: string | null;
   existKnowledgeBaseId: string | null;
@@ -50,6 +59,9 @@ export type BedrockKnowledgeBase = {
 
   // S3 Vector config - only for S3_VECTOR storage
   s3Vector?: S3VectorConfig | null;
+
+  // Aurora PostgreSQL config - only for AURORA_POSTGRESQL storage
+  auroraPostgreSQL?: AuroraPostgreSQLConfig | null;
 
   searchParams: SearchParams;
   parsingModel?: ParsingModel;

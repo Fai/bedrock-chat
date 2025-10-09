@@ -119,3 +119,34 @@ class SqlKnowledgeBaseModel(BaseModel):
     embedding_model_arn: str
     knowledge_base_id: str | None = None
     data_source_ids: list[str] | None = None
+
+
+# Aurora Vector Knowledge Base Models
+class AuroraVectorConfigModel(BaseModel):
+    """Aurora PostgreSQL pgvector configuration model"""
+
+    cluster_name: str  # Display/logging
+    cluster_arn: str  # arn:aws:rds:...:cluster:...
+    database_name: str  # e.g., "bedrock_kb"
+    table_name: str  # e.g., "bedrock_integration.kb_vectors"
+    secret_arn: str  # Secrets Manager ARN
+    embeddings_model: str = "titan_v2"  # titan_v2, cohere_multilingual_v3
+    embedding_dimensions: int = 1024
+    chunking_configuration: (
+        DefaultParamsModel
+        | FixedSizeParamsModel
+        | HierarchicalParamsModel
+        | SemanticParamsModel
+        | NoneParamsModel
+    )
+    parsing_model: type_kb_parsing_model = "anthropic.claude-3-haiku-v1"
+
+
+class AuroraVectorKnowledgeBaseModel(BaseModel):
+    """Aurora Vector Knowledge Base model for DynamoDB storage"""
+
+    knowledge_base_type: type_kb_resource_type = "AURORA_VECTOR"
+    aurora_config: AuroraVectorConfigModel
+    search_params: SearchParamsModel
+    knowledge_base_id: str | None = None
+    data_source_ids: list[str] | None = None
