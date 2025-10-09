@@ -18,7 +18,7 @@ import {
   ConversationQuickStarter,
   ActiveModels,
 } from '../../../@types/bot';
-import { ParsingModel } from '../types';
+import { ParsingModel, BedrockKnowledgeBase } from '../types';
 import { ulid } from 'ulid';
 import {
   EDGE_GENERATION_PARAMS,
@@ -588,74 +588,48 @@ const BotKbEditPage: React.FC = () => {
           );
           setKnowledgeBaseId(bot.bedrockKnowledgeBase.knowledgeBaseId);
           setExistKnowledgeBaseId(
-            bot.bedrockKnowledgeBase.existKnowledgeBaseId
+            'existKnowledgeBaseId' in bot.bedrockKnowledgeBase 
+              ? bot.bedrockKnowledgeBase.existKnowledgeBaseId 
+              : null
           );
 
           // Detect KB resource type from existing bot data
-          // SQL KBs won't have embeddings model or chunking configuration
-          if (!bot.bedrockKnowledgeBase.embeddingsModel || 
-              !bot.bedrockKnowledgeBase.chunkingConfiguration) {
-            setKbResourceType('SQL');
-          } else {
-            setKbResourceType('VECTOR');
-          }
-
-          // Detect KB resource type from existing bot data
-          // SQL KBs won't have embeddings model or chunking configuration
-          if (!bot.bedrockKnowledgeBase.embeddingsModel || 
-              !bot.bedrockKnowledgeBase.chunkingConfiguration) {
+          // SQL KBs have knowledgeBaseType property
+          if ('knowledgeBaseType' in bot.bedrockKnowledgeBase && 
+              bot.bedrockKnowledgeBase.knowledgeBaseType === 'SQL') {
             setKbResourceType('SQL');
           } else {
             setKbResourceType('VECTOR');
             
             // Only load VECTOR-specific properties
-            setEmbeddingsModel(bot.bedrockKnowledgeBase!.embeddingsModel);
-            setStorageType(
-              bot.bedrockKnowledgeBase!.storageType || 'OPENSEARCH_SERVERLESS'
-            );
-            setChunkingStrategy(
-              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy
-            );
-            if (
-              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-              'fixed_size'
-            ) {
+            const vectorKB = bot.bedrockKnowledgeBase as BedrockKnowledgeBase;
+            setEmbeddingsModel(vectorKB.embeddingsModel);
+            setStorageType(vectorKB.storageType || 'OPENSEARCH_SERVERLESS');
+            setChunkingStrategy(vectorKB.chunkingConfiguration.chunkingStrategy);
+            if (vectorKB.chunkingConfiguration.chunkingStrategy == 'fixed_size') {
               setFixedSizeParams(
-                (bot.bedrockKnowledgeBase!
-                  .chunkingConfiguration as FixedSizeParams) ??
+                (vectorKB.chunkingConfiguration as FixedSizeParams) ??
                   DEFAULT_FIXED_CHUNK_PARAMS
               );
-            } else if (
-              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-              'hierarchical'
-            ) {
+            } else if (vectorKB.chunkingConfiguration.chunkingStrategy == 'hierarchical') {
               setHierarchicalParams(
-                (bot.bedrockKnowledgeBase!
-                  .chunkingConfiguration as HierarchicalParams) ??
+                (vectorKB.chunkingConfiguration as HierarchicalParams) ??
                   DEFAULT_HIERARCHICAL_CHUNK_PARAMS
               );
-            } else if (
-              bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-              'semantic'
-            ) {
+            } else if (vectorKB.chunkingConfiguration.chunkingStrategy == 'semantic') {
               setSemanticParams(
-                (bot.bedrockKnowledgeBase!
-                  .chunkingConfiguration as SemanticParams) ??
+                (vectorKB.chunkingConfiguration as SemanticParams) ??
                   DEFAULT_SEMANTIC_CHUNK_PARAMS
               );
             }
 
-            setOpenSearchParams(bot.bedrockKnowledgeBase!.openSearch || { analyzer: null });
-            setSearchParams(bot.bedrockKnowledgeBase!.searchParams);
-            setParsingModel(bot.bedrockKnowledgeBase.parsingModel);
-            setWebCrawlingScope(
-              bot.bedrockKnowledgeBase.webCrawlingScope ?? 'DEFAULT'
-            );
+            setOpenSearchParams(vectorKB.openSearch || { analyzer: null });
+            setSearchParams(vectorKB.searchParams);
+            setParsingModel(vectorKB.parsingModel);
+            setWebCrawlingScope(vectorKB.webCrawlingScope ?? 'DEFAULT');
             setWebCrawlingFilters({
-              includePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
-                ?.includePatterns || [''],
-              excludePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
-                ?.excludePatterns || [''],
+              includePatterns: vectorKB.webCrawlingFilters?.includePatterns || [''],
+              excludePatterns: vectorKB.webCrawlingFilters?.excludePatterns || [''],
             });
           }
           setGuardrailArn(bot.bedrockGuardrails.guardrailArn);
@@ -1410,19 +1384,7 @@ const BotKbEditPage: React.FC = () => {
         (qs) => qs.title !== '' && qs.example !== ''
       ),
       bedrockKnowledgeBase: kbResourceType === 'SQL' 
-        ? {
-            knowledgeBaseType: 'SQL',
-            databaseConfig: {
-              workgroupName: sqlDatabaseConfig.workgroupName,
-              workgroupArn: sqlDatabaseConfig.workgroupArn,
-              databaseName: sqlDatabaseConfig.databaseName,
-              tableName: sqlDatabaseConfig.tableName,
-              secretArn: sqlDatabaseConfig.secretArn,
-              fieldMapping: sqlDatabaseConfig.fieldMapping,
-            },
-            searchParams: searchParams,
-            embeddingModelArn: `arn:aws:bedrock:${globalConfig?.bedrockRegion}::foundation-model/amazon.titan-embed-text-v2:0`,
-          }
+        ? undefined
         : {
             knowledgeBaseId,
             existKnowledgeBaseId,
@@ -1557,7 +1519,8 @@ const BotKbEditPage: React.FC = () => {
         ),
         bedrockKnowledgeBase: kbResourceType === 'SQL' 
           ? {
-              knowledgeBaseType: 'SQL',
+              knowledgeBaseType: 'SQL' as const,
+              knowledgeBaseId: 'SQL',
               databaseConfig: {
                 workgroupName: sqlDatabaseConfig.workgroupName,
                 workgroupArn: sqlDatabaseConfig.workgroupArn,
@@ -2227,7 +2190,6 @@ const BotKbEditPage: React.FC = () => {
                     <SqlDatabaseConfigForm
                       config={sqlDatabaseConfig}
                       onChange={setSqlDatabaseConfig}
-                      errors={errors}
                     />
                   </div>
                 )}

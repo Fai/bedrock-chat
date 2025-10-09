@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import InputText from '../../../components/InputText';
-import Textarea from '../../../components/Textarea';
 import { SqlDatabaseConfig } from '../types';
 
 interface SqlDatabaseConfigFormProps {
@@ -44,7 +43,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
           placeholder={t('knowledgeBaseSettings.sql.workgroupName.placeholder')}
           errorMessage={errors.workgroupName}
           data-testid="workgroup-name-input"
-          required
         />
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           {t('knowledgeBaseSettings.sql.workgroupName.help')}
@@ -59,7 +57,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
           placeholder={t('knowledgeBaseSettings.sql.databaseName.placeholder')}
           errorMessage={errors.databaseName}
           data-testid="database-name-input"
-          required
         />
       </div>
 
@@ -71,7 +68,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
           placeholder={t('knowledgeBaseSettings.sql.tableName.placeholder')}
           errorMessage={errors.tableName}
           data-testid="table-name-input"
-          required
         />
       </div>
 
@@ -83,7 +79,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
           placeholder={t('knowledgeBaseSettings.sql.secretArn.placeholder')}
           errorMessage={errors.secretArn}
           data-testid="secret-arn-input"
-          required
         />
         <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           {t('knowledgeBaseSettings.sql.secretArn.help')}
@@ -105,7 +100,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
             onChange={(value) => handleFieldMappingChange('id', value)}
             placeholder="id"
             data-testid="field-mapping-id"
-            required
           />
           
           <InputText
@@ -114,7 +108,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
             onChange={(value) => handleFieldMappingChange('content', value)}
             placeholder="content"
             data-testid="field-mapping-content"
-            required
           />
           
           <InputText
@@ -123,7 +116,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
             onChange={(value) => handleFieldMappingChange('metadata', value)}
             placeholder="metadata"
             data-testid="field-mapping-metadata"
-            required
           />
           
           <InputText
@@ -132,7 +124,6 @@ const SqlDatabaseConfigForm: React.FC<SqlDatabaseConfigFormProps> = ({
             onChange={(value) => handleFieldMappingChange('embedding', value)}
             placeholder="embedding"
             data-testid="field-mapping-embedding"
-            required
           />
         </div>
       </div>

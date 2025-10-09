@@ -826,6 +826,7 @@ const translation: typeof en = {
         label: 'ベクトルストレージタイプ',
         description:
           'ベクトル埋め込みのバックエンドストレージを選択してください。ボット作成後は変更できません。',
+        immutable: 'ストレージタイプは作成後に変更できません',
         openSearchServerless: {
           title: 'OpenSearch Serverless',
           description: 'サブミリ秒レイテンシーの本格的なベクトル検索',
@@ -877,6 +878,34 @@ const translation: typeof en = {
           s3Vectors: 'S3 Vectors',
           savings: '99%のコスト削減',
           note: '実際のコストは使用量とAWSの価格設定により異なる場合があります',
+        },
+      },
+      sql: {
+        workgroupName: {
+          label: 'ワークグループ名 *',
+          placeholder: 'my-workgroup',
+          help: 'Redshift Serverlessワークグループの名前',
+        },
+        databaseName: {
+          label: 'データベース名 *',
+          placeholder: 'my_database',
+        },
+        tableName: {
+          label: 'テーブル名 *',
+          placeholder: 'my_table',
+        },
+        secretArn: {
+          label: 'シークレットARN *',
+          placeholder: 'arn:aws:secretsmanager:...',
+          help: 'データベース認証情報を含むAWS Secrets Manager ARN',
+        },
+        fieldMapping: {
+          title: 'フィールドマッピング *',
+          description: 'テーブルの列を必要なフィールドにマップしてください',
+          id: 'ID列',
+          content: 'コンテンツ列',
+          metadata: 'メタデータ列',
+          embedding: '埋め込み列',
         },
       },
       s3VectorLimitation: 'S3 Vector Storeはチャンクサイズが最大500トークンで、セマンティック検索のみをサポートします。',

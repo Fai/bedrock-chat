@@ -820,6 +820,7 @@ How would you categorize this email?`,
         label: 'Vector Storage Type',
         description:
           'Choose the backend storage for your vector embeddings. This cannot be changed after creating the bot.',
+        immutable: 'Storage type cannot be changed after creation',
         openSearchServerless: {
           title: 'OpenSearch Serverless',
           description: 'Production-ready vector search with sub-millisecond latency',
@@ -872,6 +873,34 @@ How would you categorize this email?`,
           s3Vectors: '~$0.13/month',
           savings: '💰 S3 Vectors saves 99.85% on storage costs',
           note: 'Note: OpenSearch has additional compute costs (OCU) for indexing and queries. S3 Vectors has additional costs for query requests. Actual costs depend on usage patterns.',
+        },
+      },
+      sql: {
+        workgroupName: {
+          label: 'Workgroup Name *',
+          placeholder: 'my-workgroup',
+          help: 'The name of your Redshift Serverless workgroup',
+        },
+        databaseName: {
+          label: 'Database Name *',
+          placeholder: 'my_database',
+        },
+        tableName: {
+          label: 'Table Name *',
+          placeholder: 'my_table',
+        },
+        secretArn: {
+          label: 'Secret ARN *',
+          placeholder: 'arn:aws:secretsmanager:...',
+          help: 'AWS Secrets Manager ARN containing database credentials',
+        },
+        fieldMapping: {
+          title: 'Field Mapping *',
+          description: 'Map your table columns to required fields',
+          id: 'ID Column',
+          content: 'Content Column',
+          metadata: 'Metadata Column',
+          embedding: 'Embedding Column',
         },
       },
       s3VectorLimitation: 'S3 Vector Store has a maximum chunk size of 500 tokens and supports semantic search only.',
