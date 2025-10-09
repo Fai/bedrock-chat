@@ -8,6 +8,7 @@ import {
   SecurityGroup,
   Port,
   SubnetType,
+  Peer,
 } from "aws-cdk-lib/aws-ec2";
 import {
   CfnWorkgroup,
@@ -22,6 +23,7 @@ import {
   ServicePrincipal,
   ManagedPolicy,
   PolicyStatement,
+  PolicyDocument,
   Effect,
 } from "aws-cdk-lib/aws-iam";
 import {
@@ -67,7 +69,7 @@ export class SqlDatabase extends Construct {
 
     // Allow HTTPS outbound for AWS services
     this.securityGroup.addEgressRule(
-      SecurityGroup.anyIpv4(),
+      Peer.anyIpv4(),
       Port.tcp(443),
       "Allow HTTPS outbound for AWS services"
     );
@@ -170,33 +172,41 @@ export class SqlDatabase extends Construct {
       assumedBy: new ServicePrincipal("bedrock.amazonaws.com"),
       description: "Role for Bedrock Knowledge Base to access Redshift cluster",
       inlinePolicies: {
-        RedshiftDataAccess: new PolicyStatement({
-          effect: Effect.ALLOW,
-          actions: [
-            "redshift-data:BatchExecuteStatement",
-            "redshift-data:CancelStatement",
-            "redshift-data:DescribeStatement",
-            "redshift-data:DescribeTable",
-            "redshift-data:ExecuteStatement",
-            "redshift-data:GetStatementResult",
-            "redshift-data:ListDatabases",
-            "redshift-data:ListSchemas",
-            "redshift-data:ListStatements",
-            "redshift-data:ListTables",
+        RedshiftDataAccess: new PolicyDocument({
+          statements: [
+            new PolicyStatement({
+              effect: Effect.ALLOW,
+              actions: [
+                "redshift-data:BatchExecuteStatement",
+                "redshift-data:CancelStatement",
+                "redshift-data:DescribeStatement",
+                "redshift-data:DescribeTable",
+                "redshift-data:ExecuteStatement",
+                "redshift-data:GetStatementResult",
+                "redshift-data:ListDatabases",
+                "redshift-data:ListSchemas",
+                "redshift-data:ListStatements",
+                "redshift-data:ListTables",
+              ],
+              resources: ["*"], // Redshift Data API doesn't support resource-level permissions
+            }),
           ],
-          resources: ["*"], // Redshift Data API doesn't support resource-level permissions
-        }).document,
-        RedshiftServerlessAccess: new PolicyStatement({
-          effect: Effect.ALLOW,
-          actions: [
-            "redshift-serverless:GetWorkgroup",
-            "redshift-serverless:GetNamespace",
+        }),
+        RedshiftServerlessAccess: new PolicyDocument({
+          statements: [
+            new PolicyStatement({
+              effect: Effect.ALLOW,
+              actions: [
+                "redshift-serverless:GetWorkgroup",
+                "redshift-serverless:GetNamespace",
+              ],
+              resources: [
+                this.workgroup.attrWorkgroupWorkgroupArn,
+                this.namespace.attrNamespaceNamespaceArn,
+              ],
+            }),
           ],
-          resources: [
-            this.workgroup.attrWorkgroupWorkgroupArn,
-            this.namespace.attrNamespaceNamespaceArn,
-          ],
-        }).document,
+        }),
       },
     });
 
