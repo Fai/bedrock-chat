@@ -1,5 +1,6 @@
 import sys
 import unittest
+from unittest.mock import MagicMock, patch
 
 sys.path.append(".")
 
@@ -28,6 +29,35 @@ class TestUsageAnalysis(unittest.IsolatedAsyncioTestCase):
 
 
 class TestCognitoUser(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.patcher = patch("boto3.client")
+        self.mock_boto_client = self.patcher.start()
+
+        # Mock Cognito client
+        mock_cognito = MagicMock()
+        mock_cognito.admin_get_user.return_value = {
+            'Username': '07645ad8-b041-702e-9852-98b169c9f1b1',
+            'UserAttributes': [
+                {'Name': 'email', 'Value': 'test@example.com'},
+                {'Name': 'given_name', 'Value': 'Test'},
+                {'Name': 'family_name', 'Value': 'User'}
+            ],
+            'UserCreateDate': 1627984879.0,
+            'UserLastModifiedDate': 1627984879.0,
+            'Enabled': True,
+            'UserStatus': 'CONFIRMED'
+        }
+
+        def mock_client(service_name):
+            if service_name == "cognito-idp":
+                return mock_cognito
+            return MagicMock()
+
+        self.mock_boto_client.side_effect = mock_client
+
+    def tearDown(self):
+        self.patcher.stop()
+
     async def test_find_cognito_user_by_id(self):
         user = _find_cognito_user_by_id("07645ad8-b041-702e-9852-98b169c9f1b1")
         pprint(user)
