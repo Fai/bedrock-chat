@@ -15,6 +15,33 @@ from app.repositories.usage_analysis import (
 
 
 class TestUsageAnalysis(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.patcher = patch("app.repositories.usage_analysis.athena")
+        self.mock_athena = self.patcher.start()
+
+        # Mock Athena client responses
+        self.mock_athena.start_query_execution.return_value = {
+            'QueryExecutionId': 'test-query-id'
+        }
+        self.mock_athena.get_query_execution.return_value = {
+            'QueryExecution': {
+                'Status': {'State': 'SUCCEEDED'},
+                'ResultConfiguration': {'OutputLocation': 's3://test-bucket/results/'}
+            }
+        }
+        self.mock_athena.get_query_results.return_value = {
+            'ResultSet': {
+                'Rows': [
+                    {'Data': [{'VarCharValue': 'bot_id'}, {'VarCharValue': 'total_price'}]},
+                    {'Data': [{'VarCharValue': 'test-bot-1'}, {'VarCharValue': '100.50'}]},
+                    {'Data': [{'VarCharValue': 'test-bot-2'}, {'VarCharValue': '75.25'}]}
+                ]
+            }
+        }
+
+    def tearDown(self):
+        self.patcher.stop()
+
     async def test_find_bots_sorted_by_price(self):
         bots = await find_bots_sorted_by_price(
             limit=10, from_="2024010100", to_="2024120100"
