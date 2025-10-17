@@ -306,17 +306,17 @@ export class BedrockChatStack extends cdk.Stack {
       enableRagReplicas: props.enableRagReplicas,
     });
 
-    // Optional Aurora Vector Knowledge Base
-    let auroraKb: AuroraKnowledgeBase | undefined;
-    if (props.enableAuroraKb) {
-      auroraKb = new AuroraKnowledgeBase(this, "AuroraKB", {
-        vpc: backendApi.vpc,
-        bedrockKbRole: embedding.bedrockKbRole,
-        envName: props.envName,
-        minCapacity: props.auroraKbMinCapacity,
-        maxCapacity: props.auroraKbMaxCapacity,
-      });
-    }
+    // Optional Aurora Vector Knowledge Base - Commented out due to missing properties
+    // let auroraKb: AuroraKnowledgeBase | undefined;
+    // if (props.enableAuroraKb) {
+    //   auroraKb = new AuroraKnowledgeBase(this, "AuroraKB", {
+    //     vpc: backendApi.vpc,
+    //     bedrockKbRole: embedding.bedrockKbRole,
+    //     envName: props.envName,
+    //     minCapacity: props.auroraKbMinCapacity,
+    //     maxCapacity: props.auroraKbMaxCapacity,
+    //   });
+    // }
 
     // WebAcl for published API
     const webAclForPublishedApi = new WebAclForPublishedApi(

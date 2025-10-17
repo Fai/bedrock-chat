@@ -13,7 +13,7 @@ bedrockChatParams.set("default", {
   autoJoinUserGroups: ["CreatingBotAllowed"],
   userPoolDomainPrefix: "",
   identityProviders: [],
-  selfSignUpEnabled: false,
+  selfSignUpEnabled: true,
   publishedApiAllowedIpV4AddressRanges: ["0.0.0.0/1", "128.0.0.0/1"],
   publishedApiAllowedIpV6AddressRanges: [
       "0000:0000:0000:0000:0000:0000:0000:0000/1",

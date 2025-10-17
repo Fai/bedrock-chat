@@ -2,7 +2,7 @@ export const BRANDING = {
   customer: {
     name: 'ICON Framework',
     logo: {
-      default: '/assets/logos/customer-logo.png',
+      default: '/assets/logos/tfac-customer-logo.png',
     },
     background: {
       login: '/assets/backgrounds/login-bg.jpg',

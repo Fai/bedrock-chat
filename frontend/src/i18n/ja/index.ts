@@ -872,6 +872,24 @@ const translation: typeof en = {
           regionalAvailability:
             'S3 Vectorsは以下の地域でのみ利用可能です: {{regions}}。現在のBedrockリージョンは{{currentRegion}}です。',
         },
+        auroraPostgreSQL: {
+          title: 'Aurora PostgreSQL',
+          description: 'ベクトル検索機能を持つリレーショナルデータベース',
+          costLevel: '月額約$44-100/クラスター',
+          features: {
+            costEffective: 'Redshiftと比較して40-65%のコスト削減',
+            lowLatency: '100ms未満のクエリレイテンシー',
+            relational: '完全なSQLデータベース機能',
+            scalable: 'Aurora Serverless v2による自動スケーリング',
+            multiTenant: 'RLSによるマルチテナントサポート',
+          },
+          requirements: {
+            version: 'Aurora PostgreSQL 16.4+',
+            extension: 'pgvector 0.5.0+ 拡張機能',
+            schema: '特定のテーブルスキーマが必要',
+            setup: '手動クラスターセットアップが必要',
+          },
+        },
         costComparison: {
           title: 'コスト比較',
           openSearch: 'OpenSearch Serverless',
