@@ -26,6 +26,7 @@ import * as logs from "aws-cdk-lib/aws-logs";
 import * as path from "path";
 import { BedrockCustomBotCodebuild } from "./constructs/bedrock-custom-bot-codebuild";
 import { BotStore, Language } from "./constructs/bot-store";
+import { AuroraKnowledgeBase } from "./constructs/aurora-kb";
 import { Duration } from "aws-cdk-lib";
 
 export interface BedrockChatStackProps extends StackProps {
@@ -56,6 +57,9 @@ export interface BedrockChatStackProps extends StackProps {
   readonly hostedZoneId?: string;
   readonly devAccessIamRoleArn?: string;
   readonly allowedCountries?: string[];
+  readonly enableAuroraKb: boolean;
+  readonly auroraKbMinCapacity: number;
+  readonly auroraKbMaxCapacity: number;
 }
 
 export class BedrockChatStack extends cdk.Stack {
@@ -301,6 +305,18 @@ export class BedrockChatStack extends cdk.Stack {
       bedrockCustomBotProject: bedrockCustomBotCodebuild.project,
       enableRagReplicas: props.enableRagReplicas,
     });
+
+    // Optional Aurora Vector Knowledge Base
+    let auroraKb: AuroraKnowledgeBase | undefined;
+    if (props.enableAuroraKb) {
+      auroraKb = new AuroraKnowledgeBase(this, "AuroraKB", {
+        vpc: backendApi.vpc,
+        bedrockKbRole: embedding.bedrockKbRole,
+        envName: props.envName,
+        minCapacity: props.auroraKbMinCapacity,
+        maxCapacity: props.auroraKbMaxCapacity,
+      });
+    }
 
     // WebAcl for published API
     const webAclForPublishedApi = new WebAclForPublishedApi(

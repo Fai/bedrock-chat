@@ -18,7 +18,7 @@ import {
   ConversationQuickStarter,
   ActiveModels,
 } from '../../../@types/bot';
-import { ParsingModel } from '../types';
+import { ParsingModel, BedrockKnowledgeBase } from '../types';
 import { ulid } from 'ulid';
 import {
   EDGE_GENERATION_PARAMS,
@@ -49,6 +49,8 @@ import {
   OPENSEARCH_ANALYZER,
   DEFAULT_SEARCH_CONFIG,
   DEFAULT_OPENSEARCH_ANALYZER,
+  S3_VECTOR_CHUNK_LIMITS,
+  // DEFAULT_S3_VECTOR_KNOWLEDGEBASE, // Available for future use
 } from '../constants';
 import {
   GUARDRAILS_FILTERS_THRESHOLD,
@@ -66,9 +68,15 @@ import {
   SearchParams,
   SearchType,
   WebCrawlingScope,
+  VectorStorageType,
+  KnowledgeBaseResourceType,
+  SqlDatabaseConfig,
 } from '../types';
+import StorageTypeSelector from '../components/StorageTypeSelector';
+import SqlDatabaseConfigForm from '../components/SqlDatabaseConfigForm';
 import { toCamelCase } from '../../../utils/StringUtils';
 import useGlobalConfig from '../../../hooks/useGlobalConfig';
+import useKnowledgeBaseApi from '../../../hooks/useKnowledgeBaseApi';
 
 const edgeGenerationParams = EDGE_GENERATION_PARAMS;
 
@@ -82,6 +90,7 @@ const BotKbEditPage: React.FC = () => {
   const { availableTools } = useAgent();
   const { getGlobalConfig } = useGlobalConfig();
   const { data: globalConfig } = getGlobalConfig();
+  const { getKnowledgeBaseDetails } = useKnowledgeBaseApi();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -130,6 +139,9 @@ const BotKbEditPage: React.FC = () => {
   const [knowledgeBaseType, setKnowledgeBaseType] = useState<
     'new' | 'existing'
   >('new');
+  
+  // KB Resource Type: VECTOR (OpenSearch/S3) vs SQL (Redshift)
+  const [kbResourceType, setKbResourceType] = useState<KnowledgeBaseResourceType>('VECTOR');
 
   // When loading an existing bot that already has a knowledge base id(s),
   // default the radio selection to 'existing' so the UI reflects the bot state.
@@ -139,12 +151,53 @@ const BotKbEditPage: React.FC = () => {
     }
   }, [existKnowledgeBaseId, knowledgeBaseType]);
 
+  // Sync KB settings when existKnowledgeBaseId changes
+  useEffect(() => {
+    if (existKnowledgeBaseId && paramsBotId === undefined) { // Only for new bots
+      const fetchKBDetails = async () => {
+        try {
+          const response = await getKnowledgeBaseDetails(existKnowledgeBaseId);
+          const kbType = response.type;
+          if (kbType === 'SQL') {
+            setKbResourceType('SQL');
+          } else {
+            setKbResourceType('VECTOR');
+          }
+        } catch (error) {
+          console.error('Failed to fetch KB details:', error);
+          // Default to VECTOR if fetch fails
+          setKbResourceType('VECTOR');
+        }
+      };
+      fetchKBDetails();
+    }
+  }, [existKnowledgeBaseId, paramsBotId, getKnowledgeBaseDetails]);
+
   const disabledKnowledgeEdit = useMemo(() => {
     return !!existKnowledgeBaseId;
   }, [existKnowledgeBaseId]);
 
   const [embeddingsModel, setEmbeddingsModel] =
     useState<EmbeddingsModel>('titan_v2');
+
+  const [storageType, setStorageType] = useState<VectorStorageType>(
+    'OPENSEARCH_SERVERLESS'
+  );
+
+  // SQL Database Configuration
+  const [sqlDatabaseConfig, setSqlDatabaseConfig] = useState<SqlDatabaseConfig>({
+    workgroupName: '',
+    workgroupArn: '',
+    databaseName: '',
+    tableName: '',
+    secretArn: '',
+    fieldMapping: {
+      id: 'id',
+      content: 'content',
+      metadata: 'metadata',
+      embedding: 'embedding',
+    },
+  });
 
   const [hateThreshold, setHateThreshold] = useState<number>(0);
   const [insultsThreshold, setInsultsThreshold] = useState<number>(0);
@@ -372,18 +425,36 @@ const BotKbEditPage: React.FC = () => {
     label: string;
     value: SearchType;
     description: string;
-  }[] = [
-    {
-      label: t('searchSettings.searchType.hybrid.label'),
-      value: 'hybrid',
-      description: t('searchSettings.searchType.hybrid.hint'),
-    },
-    {
-      label: t('searchSettings.searchType.semantic.label'),
-      value: 'semantic',
-      description: t('searchSettings.searchType.semantic.hint'),
-    },
-  ];
+  }[] = useMemo(() => {
+    const options = [
+      {
+        label: t('searchSettings.searchType.semantic.label'),
+        value: 'semantic' as SearchType,
+        description: t('searchSettings.searchType.semantic.hint'),
+      },
+    ];
+
+    // Only show hybrid option for OpenSearch Serverless
+    if (storageType === 'OPENSEARCH_SERVERLESS') {
+      options.unshift({
+        label: t('searchSettings.searchType.hybrid.label'),
+        value: 'hybrid' as SearchType,
+        description: t('searchSettings.searchType.hybrid.hint'),
+      });
+    }
+
+    return options;
+  }, [storageType, t]);
+
+  // Force semantic search for S3 Vector storage
+  useEffect(() => {
+    if (storageType === 'S3_VECTOR' && searchParams.searchType === 'hybrid') {
+      setSearchParams((params) => ({
+        ...params,
+        searchType: 'semantic',
+      }));
+    }
+  }, [storageType, searchParams.searchType]);
 
   const {
     errorMessages,
@@ -517,43 +588,50 @@ const BotKbEditPage: React.FC = () => {
           );
           setKnowledgeBaseId(bot.bedrockKnowledgeBase.knowledgeBaseId);
           setExistKnowledgeBaseId(
-            bot.bedrockKnowledgeBase.existKnowledgeBaseId
+            'existKnowledgeBaseId' in bot.bedrockKnowledgeBase 
+              ? bot.bedrockKnowledgeBase.existKnowledgeBaseId 
+              : null
           );
-          setEmbeddingsModel(bot.bedrockKnowledgeBase!.embeddingsModel);
-          setChunkingStrategy(
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy
-          );
-          if (
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-            'fixed_size'
-          ) {
-            setFixedSizeParams(
-              (bot.bedrockKnowledgeBase!
-                .chunkingConfiguration as FixedSizeParams) ??
-                DEFAULT_FIXED_CHUNK_PARAMS
-            );
-          } else if (
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-            'hierarchical'
-          ) {
-            setHierarchicalParams(
-              (bot.bedrockKnowledgeBase!
-                .chunkingConfiguration as HierarchicalParams) ??
-                DEFAULT_HIERARCHICAL_CHUNK_PARAMS
-            );
-          } else if (
-            bot.bedrockKnowledgeBase!.chunkingConfiguration.chunkingStrategy ==
-            'semantic'
-          ) {
-            setSemanticParams(
-              (bot.bedrockKnowledgeBase!
-                .chunkingConfiguration as SemanticParams) ??
-                DEFAULT_SEMANTIC_CHUNK_PARAMS
-            );
-          }
 
-          setOpenSearchParams(bot.bedrockKnowledgeBase!.openSearch);
-          setSearchParams(bot.bedrockKnowledgeBase!.searchParams);
+          // Detect KB resource type from existing bot data
+          // SQL KBs have knowledgeBaseType property
+          if ('knowledgeBaseType' in bot.bedrockKnowledgeBase && 
+              bot.bedrockKnowledgeBase.knowledgeBaseType === 'SQL') {
+            setKbResourceType('SQL');
+          } else {
+            setKbResourceType('VECTOR');
+            
+            // Only load VECTOR-specific properties
+            const vectorKB = bot.bedrockKnowledgeBase as BedrockKnowledgeBase;
+            setEmbeddingsModel(vectorKB.embeddingsModel);
+            setStorageType(vectorKB.storageType || 'OPENSEARCH_SERVERLESS');
+            setChunkingStrategy(vectorKB.chunkingConfiguration.chunkingStrategy);
+            if (vectorKB.chunkingConfiguration.chunkingStrategy == 'fixed_size') {
+              setFixedSizeParams(
+                (vectorKB.chunkingConfiguration as FixedSizeParams) ??
+                  DEFAULT_FIXED_CHUNK_PARAMS
+              );
+            } else if (vectorKB.chunkingConfiguration.chunkingStrategy == 'hierarchical') {
+              setHierarchicalParams(
+                (vectorKB.chunkingConfiguration as HierarchicalParams) ??
+                  DEFAULT_HIERARCHICAL_CHUNK_PARAMS
+              );
+            } else if (vectorKB.chunkingConfiguration.chunkingStrategy == 'semantic') {
+              setSemanticParams(
+                (vectorKB.chunkingConfiguration as SemanticParams) ??
+                  DEFAULT_SEMANTIC_CHUNK_PARAMS
+              );
+            }
+
+            setOpenSearchParams(vectorKB.openSearch || { analyzer: null });
+            setSearchParams(vectorKB.searchParams);
+            setParsingModel(vectorKB.parsingModel);
+            setWebCrawlingScope(vectorKB.webCrawlingScope ?? 'DEFAULT');
+            setWebCrawlingFilters({
+              includePatterns: vectorKB.webCrawlingFilters?.includePatterns || [''],
+              excludePatterns: vectorKB.webCrawlingFilters?.excludePatterns || [''],
+            });
+          }
           setGuardrailArn(bot.bedrockGuardrails.guardrailArn);
           setGuardrailVersion(
             bot.bedrockGuardrails.guardrailVersion
@@ -595,16 +673,6 @@ const BotKbEditPage: React.FC = () => {
               ? bot.bedrockGuardrails.relevanceThreshold
               : 0
           );
-          setParsingModel(bot.bedrockKnowledgeBase.parsingModel);
-          setWebCrawlingScope(
-            bot.bedrockKnowledgeBase.webCrawlingScope ?? 'DEFAULT'
-          );
-          setWebCrawlingFilters({
-            includePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
-              ?.includePatterns || [''],
-            excludePatterns: bot.bedrockKnowledgeBase.webCrawlingFilters
-              ?.excludePatterns || [''],
-          });
           setActiveModels(bot.activeModels);
         })
         .finally(() => {
@@ -822,9 +890,13 @@ const BotKbEditPage: React.FC = () => {
   const onChangeEmbeddingsModel = useCallback(
     (value: EmbeddingsModel) => {
       setEmbeddingsModel(value);
-      // Update maxTokens based on the selected embeddings model
-      const maxEdgeFixed = EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[value];
-      const maxEdgeSemantic = EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[value];
+      // Update maxTokens based on the selected embeddings model and storage type
+      const maxEdgeFixed = storageType === 'S3_VECTOR'
+        ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+        : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[value];
+      const maxEdgeSemantic = storageType === 'S3_VECTOR'
+        ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+        : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[value];
       if (
         chunkingStrategy == 'fixed_size' &&
         fixedSizeParams.maxTokens > maxEdgeFixed
@@ -976,12 +1048,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         fixedSizeParams.maxTokens >
-        EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+          : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'fixedSizeParams.maxTokens',
           t('validation.maxRange.message', {
-            size: EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+              : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
           })
         );
         return false;
@@ -1037,14 +1113,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         hierarchicalParams.maxParentTokenSize >
-        EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxParentTokenSize.MAX
+          : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'hierarchicalParams.maxParentTokenSize',
           t('validation.maxRange.message', {
-            size: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[
-              embeddingsModel
-            ],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxParentTokenSize.MAX
+              : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel],
           })
         );
         return false;
@@ -1063,14 +1141,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         hierarchicalParams.maxChildTokenSize >
-        EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxChildTokenSize.MAX
+          : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'hierarchicalParams.maxChildTokenSize',
           t('validation.maxRange.message', {
-            size: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[
-              embeddingsModel
-            ],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxChildTokenSize.MAX
+              : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel],
           })
         );
         return false;
@@ -1097,12 +1177,16 @@ const BotKbEditPage: React.FC = () => {
         return false;
       } else if (
         semanticParams.maxTokens >
-        EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel]
+        (storageType === 'S3_VECTOR'
+          ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+          : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel])
       ) {
         setErrorMessages(
           'semanticParams.maxTokens',
           t('validation.maxRange.message', {
-            size: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
+            size: storageType === 'S3_VECTOR'
+              ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+              : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
           })
         );
         return false;
@@ -1192,6 +1276,47 @@ const BotKbEditPage: React.FC = () => {
       return false;
     }
 
+    // SQL KB validation
+    if (kbResourceType === 'SQL') {
+      if (!sqlDatabaseConfig.workgroupName) {
+        setErrorMessages('workgroupName', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.workgroupArn) {
+        setErrorMessages('workgroupArn', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.databaseName) {
+        setErrorMessages('databaseName', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.tableName) {
+        setErrorMessages('tableName', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.secretArn) {
+        setErrorMessages('secretArn', t('validation.required'));
+        return false;
+      }
+      // Validate field mapping
+      if (!sqlDatabaseConfig.fieldMapping.id) {
+        setErrorMessages('fieldMapping.id', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.fieldMapping.content) {
+        setErrorMessages('fieldMapping.content', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.fieldMapping.metadata) {
+        setErrorMessages('fieldMapping.metadata', t('validation.required'));
+        return false;
+      }
+      if (!sqlDatabaseConfig.fieldMapping.embedding) {
+        setErrorMessages('fieldMapping.embedding', t('validation.required'));
+        return false;
+      }
+    }
+
     return (
       isValidGenerationConfigParam(maxTokens, 'maxTokens') &&
       isValidGenerationConfigParam(topK, 'topK') &&
@@ -1212,6 +1337,9 @@ const BotKbEditPage: React.FC = () => {
     topP,
     temperature,
     setErrorMessages,
+    kbResourceType,
+    sqlDatabaseConfig,
+    t,
     embeddingsModel,
     chunkingStrategy,
     fixedSizeParams,
@@ -1255,30 +1383,33 @@ const BotKbEditPage: React.FC = () => {
       conversationQuickStarters: conversationQuickStarters.filter(
         (qs) => qs.title !== '' && qs.example !== ''
       ),
-      bedrockKnowledgeBase: {
-        knowledgeBaseId,
-        existKnowledgeBaseId,
-        embeddingsModel,
-        chunkingConfiguration: (() => {
-          switch (chunkingStrategy) {
-            case 'default':
-              return { chunkingStrategy: 'default' };
-            case 'fixed_size':
-              return fixedSizeParams;
-            case 'hierarchical':
-              return hierarchicalParams;
-            case 'semantic':
-              return semanticParams;
-            default:
-              return { chunkingStrategy: 'none' };
-          }
-        })(),
-        openSearch: openSearchParams,
-        searchParams: searchParams,
-        parsingModel,
-        webCrawlingScope,
-        webCrawlingFilters,
-      },
+      bedrockKnowledgeBase: kbResourceType === 'SQL' 
+        ? undefined
+        : {
+            knowledgeBaseId,
+            existKnowledgeBaseId,
+            storageType,
+            embeddingsModel,
+            chunkingConfiguration: (() => {
+              switch (chunkingStrategy) {
+                case 'default':
+                  return { chunkingStrategy: 'default' };
+                case 'fixed_size':
+                  return fixedSizeParams;
+                case 'hierarchical':
+                  return hierarchicalParams;
+                case 'semantic':
+                  return semanticParams;
+                default:
+                  return { chunkingStrategy: 'none' };
+              }
+            })(),
+            openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
+            searchParams: searchParams,
+            parsingModel,
+            webCrawlingScope,
+            webCrawlingFilters,
+          },
       bedrockGuardrails: {
         isGuardrailEnabled:
           hateThreshold > 0 ||
@@ -1386,30 +1517,46 @@ const BotKbEditPage: React.FC = () => {
         conversationQuickStarters: conversationQuickStarters.filter(
           (qs) => qs.title !== '' && qs.example !== ''
         ),
-        bedrockKnowledgeBase: {
-          knowledgeBaseId,
-          existKnowledgeBaseId,
-          embeddingsModel,
-          chunkingConfiguration: (() => {
-            switch (chunkingStrategy) {
-              case 'default':
-                return { chunkingStrategy: 'default' };
-              case 'fixed_size':
-                return fixedSizeParams;
-              case 'hierarchical':
-                return hierarchicalParams;
-              case 'semantic':
-                return semanticParams;
-              default:
-                return { chunkingStrategy: 'none' };
+        bedrockKnowledgeBase: kbResourceType === 'SQL' 
+          ? {
+              knowledgeBaseType: 'SQL' as const,
+              knowledgeBaseId: 'SQL',
+              databaseConfig: {
+                workgroupName: sqlDatabaseConfig.workgroupName,
+                workgroupArn: sqlDatabaseConfig.workgroupArn,
+                databaseName: sqlDatabaseConfig.databaseName,
+                tableName: sqlDatabaseConfig.tableName,
+                secretArn: sqlDatabaseConfig.secretArn,
+                fieldMapping: sqlDatabaseConfig.fieldMapping,
+              },
+              searchParams: searchParams,
+              embeddingModelArn: `arn:aws:bedrock:${globalConfig?.bedrockRegion}::foundation-model/amazon.titan-embed-text-v2:0`,
             }
-          })(),
-          openSearch: openSearchParams,
-          searchParams: searchParams,
-          parsingModel,
-          webCrawlingScope,
-          webCrawlingFilters,
-        },
+          : {
+              knowledgeBaseId,
+              existKnowledgeBaseId,
+              storageType,
+              embeddingsModel,
+              chunkingConfiguration: (() => {
+                switch (chunkingStrategy) {
+                  case 'default':
+                    return { chunkingStrategy: 'default' };
+                  case 'fixed_size':
+                    return fixedSizeParams;
+                  case 'hierarchical':
+                    return hierarchicalParams;
+                  case 'semantic':
+                    return semanticParams;
+                  default:
+                    return { chunkingStrategy: 'none' };
+                }
+              })(),
+              openSearch: storageType === 'OPENSEARCH_SERVERLESS' ? openSearchParams : null,
+              searchParams: searchParams,
+              parsingModel,
+              webCrawlingScope,
+              webCrawlingFilters,
+            },
         bedrockGuardrails: {
           isGuardrailEnabled:
             hateThreshold > 0 ||
@@ -1548,16 +1695,18 @@ const BotKbEditPage: React.FC = () => {
                 setTools={setTools}
               />
 
-              <div className="mt-3">
-                <div className="flex items-center gap-1">
-                  <div className="text-lg font-bold">
-                    {t('bot.label.knowledge')}
+              {/* Knowledge Section - Only for VECTOR KBs */}
+              {kbResourceType === 'VECTOR' && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-1">
+                    <div className="text-lg font-bold">
+                      {t('bot.label.knowledge')}
+                    </div>
                   </div>
-                </div>
 
-                <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                  {t('bot.help.knowledge.overview')}
-                </div>
+                  <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                    {t('bot.help.knowledge.overview')}
+                  </div>
 
                 <div className="mt-2 flex gap-4">
                   <RadioButton
@@ -1889,6 +2038,7 @@ const BotKbEditPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+              )}
 
               <div className="mt-3">
                 <div className="flex items-center gap-1">
@@ -2006,45 +2156,125 @@ const BotKbEditPage: React.FC = () => {
                   {t('knowledgeBaseSettings.description')}
                 </div>
 
-                <div className="mt-3">
-                  <Select
-                    label={t('knowledgeBaseSettings.embeddingModel.label')}
-                    value={embeddingsModel}
-                    options={embeddingsModelOptions}
-                    onChange={(val) => {
-                      onChangeEmbeddingsModel(val as EmbeddingsModel);
-                    }}
-                    disabled={!isNewBot}
-                  />
-                </div>
-
-                <div className="mt-3">
-                  <Select
-                    label={t('knowledgeBaseSettings.advancedParsing.label')}
-                    value={parsingModel || 'disabled'}
-                    options={parsingModelOptions}
-                    onChange={(val) => {
-                      setParsingModel(val as ParsingModel);
-                    }}
-                    disabled={!isNewBot}
-                  />
-                  <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                    {t('knowledgeBaseSettings.advancedParsing.hint')}
+                {/* KB Resource Type Selector */}
+                {isNewBot && (
+                  <div className="mt-3">
+                    <div className="text-sm font-semibold">
+                      {t('knowledgeBaseSettings.resourceType.label')}
+                    </div>
+                    <div className="mt-2 flex gap-4">
+                      <RadioButton
+                        name="kbResourceType"
+                        value="VECTOR"
+                        checked={kbResourceType === 'VECTOR'}
+                        label={t('knowledgeBaseSettings.resourceType.vector.label')}
+                        onChange={() => setKbResourceType('VECTOR')}
+                      />
+                      <RadioButton
+                        name="kbResourceType"
+                        value="SQL"
+                        checked={kbResourceType === 'SQL'}
+                        label={t('knowledgeBaseSettings.resourceType.sql.label')}
+                        onChange={() => setKbResourceType('SQL')}
+                      />
+                    </div>
+                    <div className="text-xs text-aws-font-color-light/50 dark:text-aws-font-color-dark mt-1">
+                      {t('knowledgeBaseSettings.resourceType.hint')}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <div className="mt-3">
-                  <Select
-                    label={t('knowledgeBaseSettings.chunkingStrategy.label')}
-                    value={chunkingStrategy}
-                    options={chunkingStrategyOptions}
-                    onChange={(val) => {
-                      setChunkingStrategy(val as ChunkingStrategy);
-                    }}
-                    disabled={!isNewBot}
-                  />
-                </div>
-                {chunkingStrategy === 'fixed_size' && (
+                {/* SQL Database Configuration - Only for SQL KBs */}
+                {kbResourceType === 'SQL' && (
+                  <div className="mt-3">
+                    <SqlDatabaseConfigForm
+                      config={sqlDatabaseConfig}
+                      onChange={setSqlDatabaseConfig}
+                    />
+                  </div>
+                )}
+
+                {/* Storage Type Selector - Only for VECTOR KBs */}
+                {isNewBot && kbResourceType === 'VECTOR' && (
+                  <div className="mt-3">
+                    <StorageTypeSelector
+                      selectedStorageType={storageType}
+                      onStorageTypeChange={setStorageType}
+                      bedrockRegion={globalConfig?.bedrockRegion}
+                    />
+                  </div>
+                )}
+
+                {/* Storage Type Immutability Warning for Existing Bots */}
+                {!isNewBot && kbResourceType === 'VECTOR' && (
+                  <div className="mt-3">
+                    <Alert severity="info">
+                      {t('knowledgeBaseSettings.storageType.immutable')}
+                    </Alert>
+                  </div>
+                )}
+
+                {/* Embeddings Model - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && (
+                  <div className="mt-3">
+                    <Select
+                      label={t('knowledgeBaseSettings.embeddingModel.label')}
+                      value={embeddingsModel}
+                      options={embeddingsModelOptions}
+                      onChange={(val) => {
+                        onChangeEmbeddingsModel(val as EmbeddingsModel);
+                      }}
+                      disabled={!isNewBot}
+                    />
+                  </div>
+                )}
+
+                {/* Advanced Parsing - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && (
+                  <div className="mt-3">
+                    <Select
+                      label={t('knowledgeBaseSettings.advancedParsing.label')}
+                      value={parsingModel || 'disabled'}
+                      options={parsingModelOptions}
+                      onChange={(val) => {
+                        setParsingModel(val as ParsingModel);
+                      }}
+                      disabled={!isNewBot}
+                    />
+                    <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                      {t('knowledgeBaseSettings.advancedParsing.hint')}
+                    </div>
+                  </div>
+                )}
+
+                {/* Chunking Strategy - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && (
+                  <>
+                    <div className="mt-3">
+                      <Select
+                        label={t('knowledgeBaseSettings.chunkingStrategy.label')}
+                        value={chunkingStrategy}
+                        options={chunkingStrategyOptions}
+                        onChange={(val) => {
+                          setChunkingStrategy(val as ChunkingStrategy);
+                        }}
+                        disabled={!isNewBot}
+                      />
+                    </div>
+
+                    {/* S3 Vector Limitation Warning */}
+                    {storageType === 'S3_VECTOR' && (
+                      <Alert severity="info" className="mt-2">
+                        <Trans i18nKey="knowledgeBaseSettings.s3VectorLimitation">
+                          S3 Vector Store has a maximum chunk size of 500 tokens and supports semantic search only.
+                        </Trans>
+                      </Alert>
+                    )}
+                  </>
+                )}
+
+                {/* Chunking Strategy Details - Only for VECTOR KBs */}
+                {kbResourceType === 'VECTOR' && chunkingStrategy === 'fixed_size' && (
                   <>
                     <div className="mx-4 mt-2">
                       <Slider
@@ -2061,9 +2291,9 @@ const BotKbEditPage: React.FC = () => {
                         }
                         range={{
                           min: EDGE_FIXED_CHUNK_PARAMS.maxTokens.MIN,
-                          max: EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[
-                            embeddingsModel
-                          ],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.FIXED_SIZE.maxTokens.MAX
+                            : EDGE_FIXED_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
                           step: EDGE_FIXED_CHUNK_PARAMS.maxTokens.STEP,
                         }}
                         onChange={(value) =>
@@ -2114,7 +2344,7 @@ const BotKbEditPage: React.FC = () => {
                     </div>
                   </>
                 )}
-                {chunkingStrategy === 'hierarchical' && (
+                {kbResourceType === 'VECTOR' && chunkingStrategy === 'hierarchical' && (
                   <>
                     <div className="mx-4 mt-2">
                       <Slider
@@ -2172,8 +2402,9 @@ const BotKbEditPage: React.FC = () => {
                         range={{
                           min: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize
                             .MIN,
-                          max: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize
-                            .MAX[embeddingsModel],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxParentTokenSize.MAX
+                            : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxParentTokenSize.MAX[embeddingsModel],
                           step: EDGE_HIERARCHICAL_CHUNK_PARAMS
                             .maxParentTokenSize.STEP,
                         }}
@@ -2207,8 +2438,9 @@ const BotKbEditPage: React.FC = () => {
                         range={{
                           min: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize
                             .MIN,
-                          max: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize
-                            .MAX[embeddingsModel],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.HIERARCHICAL.maxChildTokenSize.MAX
+                            : EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize.MAX[embeddingsModel],
                           step: EDGE_HIERARCHICAL_CHUNK_PARAMS.maxChildTokenSize
                             .STEP,
                         }}
@@ -2226,7 +2458,7 @@ const BotKbEditPage: React.FC = () => {
                     </div>
                   </>
                 )}
-                {chunkingStrategy === 'semantic' && (
+                {kbResourceType === 'VECTOR' && chunkingStrategy === 'semantic' && (
                   <>
                     <div className="mx-4 mt-2">
                       <Slider
@@ -2243,9 +2475,9 @@ const BotKbEditPage: React.FC = () => {
                         }
                         range={{
                           min: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MIN,
-                          max: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[
-                            embeddingsModel
-                          ],
+                          max: storageType === 'S3_VECTOR'
+                            ? S3_VECTOR_CHUNK_LIMITS.SEMANTIC.maxTokens.MAX
+                            : EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.MAX[embeddingsModel],
                           step: EDGE_SEMANTIC_CHUNK_PARAMS.maxTokens.STEP,
                         }}
                         onChange={(value) =>
@@ -2332,71 +2564,76 @@ const BotKbEditPage: React.FC = () => {
                   </>
                 )}
 
-                {isNewBot && (
-                  <div className="mt-3 grid gap-1">
-                    <Select
-                      label={t(
-                        'knowledgeBaseSettings.opensearchAnalyzer.label'
-                      )}
-                      value={analyzer}
-                      options={analyzerOptions}
-                      onChange={(val) => {
-                        setAnalyzer(val);
-                        setOpenSearchParams(OPENSEARCH_ANALYZER[val]);
-                      }}
-                      className="mt-2"
-                    />
-                    <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                      {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
-                    </div>
-                  </div>
-                )}
-                {!isNewBot && (
-                  <div className="mt-3 grid gap-1">
-                    <div className="text-sm">
-                      {t('knowledgeBaseSettings.opensearchAnalyzer.label')}
-                    </div>
-                    <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
-                      {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
-                    </div>
-                    <div
-                      className="grid grid-cols-[auto_1fr] gap-2 rounded 
-                      border border-aws-font-color-light/50 p-4 text-sm dark:border-aws-font-color-dark/50">
-                      <div>
-                        {t(
-                          'knowledgeBaseSettings.opensearchAnalyzer.tokenizer'
-                        )}
-                      </div>
-                      <div>
-                        {openSearchParams.analyzer?.tokenizer ??
-                          t(
-                            'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                {/* OpenSearch Analyzer - Only for OpenSearch Serverless */}
+                {storageType === 'OPENSEARCH_SERVERLESS' && (
+                  <>
+                    {isNewBot && (
+                      <div className="mt-3 grid gap-1">
+                        <Select
+                          label={t(
+                            'knowledgeBaseSettings.opensearchAnalyzer.label'
                           )}
+                          value={analyzer}
+                          options={analyzerOptions}
+                          onChange={(val) => {
+                            setAnalyzer(val);
+                            setOpenSearchParams(OPENSEARCH_ANALYZER[val]);
+                          }}
+                          className="mt-2"
+                        />
+                        <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                          {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
+                        </div>
                       </div>
-                      <div>
-                        {t(
-                          'knowledgeBaseSettings.opensearchAnalyzer.normalizer'
-                        )}
+                    )}
+                    {!isNewBot && (
+                      <div className="mt-3 grid gap-1">
+                        <div className="text-sm">
+                          {t('knowledgeBaseSettings.opensearchAnalyzer.label')}
+                        </div>
+                        <div className="text-sm text-aws-font-color-light/50 dark:text-aws-font-color-dark">
+                          {t('knowledgeBaseSettings.opensearchAnalyzer.hint')}
+                        </div>
+                        <div
+                          className="grid grid-cols-[auto_1fr] gap-2 rounded 
+                          border border-aws-font-color-light/50 p-4 text-sm dark:border-aws-font-color-dark/50">
+                          <div>
+                            {t(
+                              'knowledgeBaseSettings.opensearchAnalyzer.tokenizer'
+                            )}
+                          </div>
+                          <div>
+                            {openSearchParams.analyzer?.tokenizer ??
+                              t(
+                                'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                              )}
+                          </div>
+                          <div>
+                            {t(
+                              'knowledgeBaseSettings.opensearchAnalyzer.normalizer'
+                            )}
+                          </div>
+                          <div>
+                            {openSearchParams.analyzer?.characterFilters ??
+                              t(
+                                'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                              )}
+                          </div>
+                          <div>
+                            {t(
+                              'knowledgeBaseSettings.opensearchAnalyzer.token_filter'
+                            )}
+                          </div>
+                          <div className="grid gap-2">
+                            {openSearchParams.analyzer?.tokenFilters.join(', ') ??
+                              t(
+                                'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
+                              )}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        {openSearchParams.analyzer?.characterFilters ??
-                          t(
-                            'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
-                          )}
-                      </div>
-                      <div>
-                        {t(
-                          'knowledgeBaseSettings.opensearchAnalyzer.token_filter'
-                        )}
-                      </div>
-                      <div className="grid gap-2">
-                        {openSearchParams.analyzer?.tokenFilters.join(', ') ??
-                          t(
-                            'knowledgeBaseSettings.opensearchAnalyzer.not_specified'
-                          )}
-                      </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </ExpandableDrawerGroup>
 

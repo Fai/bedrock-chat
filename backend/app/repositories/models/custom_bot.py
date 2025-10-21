@@ -5,7 +5,7 @@ from app.config import DEFAULT_GENERATION_CONFIG
 from app.config import GenerationParams as GenerationParamsDict
 from app.repositories.models.common import DynamicBaseModel, Float, SecureString
 from app.repositories.models.custom_bot_guardrails import BedrockGuardrailsModel
-from app.repositories.models.custom_bot_kb import BedrockKnowledgeBaseModel
+from app.repositories.models.custom_bot_kb import BedrockKnowledgeBaseModel, SqlKnowledgeBaseModel
 from app.routes.schemas.bot import (
     ActiveModelsOutput,
     Agent,
@@ -396,7 +396,7 @@ class BotModel(BaseModel):
     published_api_codebuild_id: str | None
     display_retrieved_chunks: bool
     conversation_quick_starters: list[ConversationQuickStarterModel]
-    bedrock_knowledge_base: BedrockKnowledgeBaseModel | None
+    bedrock_knowledge_base: BedrockKnowledgeBaseModel | SqlKnowledgeBaseModel | None
     bedrock_guardrails: BedrockGuardrailsModel | None
     active_models: ActiveModelsModel  # type: ignore
     usage_stats: UsageStatsModel

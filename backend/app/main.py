@@ -17,6 +17,7 @@ from app.routes.conversation import router as conversation_router
 from app.routes.global_config import router as global_config_router
 from app.routes.published_api import router as published_api_router
 from app.routes.user import router as user_router
+from app.routes.sql_kb import router as sql_kb_router
 from app.user import User
 from app.utils import is_running_on_lambda
 from fastapi import Depends, FastAPI, Request
@@ -67,6 +68,7 @@ if not is_published_api:
     app.include_router(user_router)
     app.include_router(bot_store_router)
     app.include_router(global_config_router)
+    app.include_router(sql_kb_router)
 else:
     app.include_router(published_api_router)
 

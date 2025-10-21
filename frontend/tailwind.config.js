@@ -4,7 +4,8 @@ export default {
   darkMode: 'class',
   theme: {
     fontFamily: {
-      body: ['M PLUS Rounded 1c'],
+      body: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+      heading: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
     },
     extend: {
       transitionProperty: {
@@ -15,41 +16,67 @@ export default {
         fastPulse: 'pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
       colors: {
+        // ICON Framework Brand Colors
+        'icon-red': {
+          primary: '#a72b23',    // Main brand red
+          dark: '#95251a',       // Darker variant
+          light: '#ec5254',      // Lighter accent
+          cta: '#ce282c',        // Call-to-action
+        },
+        'icon-gray': {
+          dark: '#3c4d55',       // Text/borders
+          medium: '#949ea7',     // Secondary text
+          light: '#f5f5f5',      // Backgrounds
+          neutral: '#eef0ef',    // Alternative bg
+        },
+        'icon-ui': {
+          success: '#28a745',
+          warning: '#ffc107',
+          info: '#007fff',
+          danger: '#dc3545',
+        },
+        // Dark mode variants
+        'icon-dark': {
+          bg: '#2e3639',         // Dark background
+          surface: '#3c4d55',    // Surface color
+          text: '#f5f5f5',       // Text on dark
+        },
+        // Legacy AWS colors (backward compatibility)
         'aws-squid-ink': {
-          light: '#232F3E',
-          dark: '#171717',
+          light: '#3c4d55',
+          dark: '#2e3639',
         },
         'aws-sea-blue': {
-          light: '#005276',
-          dark: '#757575',
+          light: '#a72b23',
+          dark: '#3c4d55',
         },
         'aws-sea-blue-hover': {
-          light: '#003550',
-          dark: '#5b5b5b',
+          light: '#95251a',
+          dark: '#3c4d55',
         },
-        'aws-aqua': '#007faa',
-        'aws-lab': '#38ef7d',
+        'aws-aqua': '#a72b23',
+        'aws-lab': '#28a745',
         'aws-mist': '#9ffcea',
         'aws-font-color': {
-          light: '#232F3E',
-          dark: '#cacaca',
-          gray: '#909193',
-          blue: '#276cc6',
+          light: '#3c4d55',
+          dark: '#f5f5f5',
+          gray: '#949ea7',
+          blue: '#007fff',
         },
         'aws-font-color-white': {
           light: '#ffffff',
-          dark:'#ececec',
+          dark:'#f5f5f5',
         },
         'aws-ui-color': {
-          dark: '#151515',
+          dark: '#2e3639',
         },
         'aws-paper': {
-          light: '#f1f3f3',
-          dark: '#212121',
+          light: '#f5f5f5',
+          dark: '#2e3639',
         },
-        red: '#dc2626',
+        red: '#dc3545',
         'light-red': '#fee2e2',
-        yellow: '#f59e0b',
+        yellow: '#ffc107',
         'light-yellow': '#fef9c3',
         'dark-gray': '#6b7280',
         gray: '#9ca3af',

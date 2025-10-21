@@ -1,5 +1,6 @@
 import sys
 import unittest
+from unittest.mock import MagicMock, patch
 
 sys.path.append(".")
 
@@ -14,6 +15,33 @@ from app.repositories.usage_analysis import (
 
 
 class TestUsageAnalysis(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.patcher = patch("app.repositories.usage_analysis.athena")
+        self.mock_athena = self.patcher.start()
+
+        # Mock Athena client responses
+        self.mock_athena.start_query_execution.return_value = {
+            'QueryExecutionId': 'test-query-id'
+        }
+        self.mock_athena.get_query_execution.return_value = {
+            'QueryExecution': {
+                'Status': {'State': 'SUCCEEDED'},
+                'ResultConfiguration': {'OutputLocation': 's3://test-bucket/results/'}
+            }
+        }
+        self.mock_athena.get_query_results.return_value = {
+            'ResultSet': {
+                'Rows': [
+                    {'Data': [{'VarCharValue': 'bot_id'}, {'VarCharValue': 'total_price'}]},
+                    {'Data': [{'VarCharValue': 'test-bot-1'}, {'VarCharValue': '100.50'}]},
+                    {'Data': [{'VarCharValue': 'test-bot-2'}, {'VarCharValue': '75.25'}]}
+                ]
+            }
+        }
+
+    def tearDown(self):
+        self.patcher.stop()
+
     async def test_find_bots_sorted_by_price(self):
         bots = await find_bots_sorted_by_price(
             limit=10, from_="2024010100", to_="2024120100"
@@ -28,6 +56,35 @@ class TestUsageAnalysis(unittest.IsolatedAsyncioTestCase):
 
 
 class TestCognitoUser(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.patcher = patch("boto3.client")
+        self.mock_boto_client = self.patcher.start()
+
+        # Mock Cognito client
+        mock_cognito = MagicMock()
+        mock_cognito.admin_get_user.return_value = {
+            'Username': '07645ad8-b041-702e-9852-98b169c9f1b1',
+            'UserAttributes': [
+                {'Name': 'email', 'Value': 'test@example.com'},
+                {'Name': 'given_name', 'Value': 'Test'},
+                {'Name': 'family_name', 'Value': 'User'}
+            ],
+            'UserCreateDate': 1627984879.0,
+            'UserLastModifiedDate': 1627984879.0,
+            'Enabled': True,
+            'UserStatus': 'CONFIRMED'
+        }
+
+        def mock_client(service_name):
+            if service_name == "cognito-idp":
+                return mock_cognito
+            return MagicMock()
+
+        self.mock_boto_client.side_effect = mock_client
+
+    def tearDown(self):
+        self.patcher.stop()
+
     async def test_find_cognito_user_by_id(self):
         user = _find_cognito_user_by_id("07645ad8-b041-702e-9852-98b169c9f1b1")
         pprint(user)

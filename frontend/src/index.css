@@ -4,9 +4,15 @@
 
 /* tailwindの設定で上書きされてしまうので、importantを設定する */
 .amplify-button--primary {
-  background-color: var(
-    --amplify-components-button-primary-background-color
-  ) !important;
+  background-color: #a72b23 !important;
+}
+
+.amplify-button--primary:hover {
+  background-color: #95251a !important;
+}
+
+.amplify-button--link {
+  color: #a72b23 !important;
 }
 
 /* styles/globals.css もしくは該当コンポーネントのCSS */

@@ -804,6 +804,124 @@ How would you categorize this email?`,
       title: 'Knowledge Detail Settings',
       description:
         'Select the embedded model for configuring knowledge, and set the method for splitting documents added as knowledge. These settings cannot be changed after creating the bot.',
+      resourceType: {
+        label: 'Knowledge Base Type',
+        hint: 'Choose between vector-based document search or SQL database queries. This cannot be changed after creating the bot.',
+        vector: {
+          label: 'Document Search (Vector)',
+          description: 'Search through uploaded documents using semantic similarity',
+        },
+        sql: {
+          label: 'SQL Database (Structured Data)',
+          description: 'Query structured data in Amazon Redshift using natural language',
+        },
+      },
+      storageType: {
+        label: 'Vector Storage Type',
+        description:
+          'Choose the backend storage for your vector embeddings. This cannot be changed after creating the bot.',
+        immutable: 'Storage type cannot be changed after creation',
+        openSearchServerless: {
+          title: 'OpenSearch Serverless',
+          description: 'Production-ready vector search with sub-millisecond latency',
+          costLevel: '~$88/month per 1M vectors',
+          features: {
+            latency: 'Sub-millisecond query latency',
+            hybridSearch: 'Hybrid search (semantic + keyword)',
+            chunkSize: 'Up to 8192 token chunks',
+            production: 'Production-ready with SLA',
+            metadata: 'Full metadata support',
+          },
+        },
+        s3Vector: {
+          title: 'S3 Vectors',
+          description: 'Cost-optimized vector storage for large datasets',
+          costLevel: '~$0.13/month per 1M vectors',
+          features: {
+            costSavings: '99% cost savings vs OpenSearch',
+            largeDatasets: 'Ideal for large datasets',
+            devTest: 'Good for dev/test workloads',
+            quickCreate: 'Quick Create auto-provisioning',
+          },
+          limitations: {
+            preview: 'Preview feature - subject to change',
+            semanticOnly: 'Semantic search only (no hybrid)',
+            chunkLimit: 'Max 500 tokens per chunk',
+            latency: 'Sub-second latency (not sub-millisecond)',
+          },
+          warning: {
+            previewTitle: 'Preview Feature',
+            previewDescription:
+              'S3 Vectors is currently in preview. While suitable for development and testing, it may experience changes and is not recommended for production workloads requiring guaranteed SLAs.',
+            limitationsTitle: 'Key Limitations',
+            limitations: {
+              regional: 'Regional Availability: Only available in us-east-1, us-east-2, us-west-2, eu-central-1, ap-southeast-2',
+              searchType: 'Search Type: Semantic search only (no hybrid search)',
+              chunking: 'Chunking Limit: Maximum 500 tokens per chunk (vs 8192 for OpenSearch)',
+              latency: 'Query Latency: Sub-second response time (vs sub-millisecond for OpenSearch)',
+            },
+            bestForTitle: 'Best For',
+            bestForDescription:
+              'Development, testing, cost-sensitive workloads with large datasets and low query volumes. For production workloads requiring low latency and hybrid search, consider OpenSearch Serverless.',
+          },
+          regionalAvailability:
+            'S3 Vectors is only available in: {{regions}}. Your current Bedrock region is {{currentRegion}}.',
+        },
+        auroraPostgreSQL: {
+          title: 'Aurora PostgreSQL',
+          description: 'Relational database with vector search capabilities',
+          costLevel: '~$44-100/month per cluster',
+          features: {
+            costEffective: '40-65% cost reduction vs Redshift',
+            lowLatency: 'Sub-100ms query latency',
+            relational: 'Full SQL database capabilities',
+            scalable: 'Auto-scaling with Aurora Serverless v2',
+            multiTenant: 'Multi-tenant support with RLS',
+          },
+          requirements: {
+            version: 'Aurora PostgreSQL 16.4+',
+            extension: 'pgvector 0.5.0+ extension',
+            schema: 'Specific table schema required',
+            setup: 'Manual cluster setup required',
+          },
+        },
+        costComparison: {
+          title: 'Storage Cost Comparison (1M vectors @ 1024 dimensions)',
+          openSearch: '~$88/month',
+          s3Vectors: '~$0.13/month',
+          savings: '💰 S3 Vectors saves 99.85% on storage costs',
+          note: 'Note: OpenSearch has additional compute costs (OCU) for indexing and queries. S3 Vectors has additional costs for query requests. Actual costs depend on usage patterns.',
+        },
+      },
+      sql: {
+        workgroupName: {
+          label: 'Workgroup Name *',
+          placeholder: 'my-workgroup',
+          help: 'The name of your Redshift Serverless workgroup',
+        },
+        databaseName: {
+          label: 'Database Name *',
+          placeholder: 'my_database',
+        },
+        tableName: {
+          label: 'Table Name *',
+          placeholder: 'my_table',
+        },
+        secretArn: {
+          label: 'Secret ARN *',
+          placeholder: 'arn:aws:secretsmanager:...',
+          help: 'AWS Secrets Manager ARN containing database credentials',
+        },
+        fieldMapping: {
+          title: 'Field Mapping *',
+          description: 'Map your table columns to required fields',
+          id: 'ID Column',
+          content: 'Content Column',
+          metadata: 'Metadata Column',
+          embedding: 'Embedding Column',
+        },
+      },
+      s3VectorLimitation: 'S3 Vector Store has a maximum chunk size of 500 tokens and supports semantic search only.',
       embeddingModel: {
         label: 'Embeddings Model',
         titan_v2: {
@@ -814,7 +932,7 @@ How would you categorize this email?`,
         },
       },
       chunkingStrategy: {
-        label: 'Chunking Strategy',
+        label: 'Chunking Strategy (Vector KBs only)',
         default: {
           label: 'Default chunking',
           hint: "Automatically splits text into chunks of about 300 tokens in size, by default. If a document is less than or already 300 tokens, it's not split any futher.",
@@ -865,8 +983,8 @@ How would you categorize this email?`,
         hint: 'The percentile threshold of sentence distance/dissimilarity to draw breakpoints between sentences.',
       },
       opensearchAnalyzer: {
-        label: 'Analyzer (Tokenization, Normalization)',
-        hint: 'You can specify the analyzer to tokenize and normalize the documents registered as knowledge. Selecting an appropriate analyzer will improve search accuracy. Please choose the optimal analyzer that matches the language of your knowledge.',
+        label: 'Analyzer (OpenSearch Serverless only)',
+        hint: 'Configure text analysis for OpenSearch indexing. This setting only applies to OpenSearch Serverless storage and is not used with S3 Vector storage. Select the analyzer that matches your knowledge language for optimal search accuracy.',
         icu: {
           label: 'ICU analyzer',
           hint: 'For tokenization, {{tokenizer}} is used, and for normalization, {{normalizer}} is used.',
@@ -885,7 +1003,7 @@ How would you categorize this email?`,
         not_specified: 'Not specified',
       },
       advancedParsing: {
-        label: 'Advanced Parsing',
+        label: 'Advanced Parsing (Vector KBs only)',
         description:
           'Select a model to use for advanced document parsing capabilities.',
         hint: 'Suitable for parsing more than standard text in supported document formats, including tables within PDFs with their structure intact. Additional costs are incurred for parsing using generative AI.',

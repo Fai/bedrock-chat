@@ -264,10 +264,13 @@ export class Api extends Construct {
         USAGE_ANALYSIS_OUTPUT_LOCATION: usageAnalysisOutputLocation,
         ENABLE_BEDROCK_CROSS_REGION_INFERENCE:
           props.enableBedrockCrossRegionInference.toString(),
-        GLOBAL_AVAILABLE_MODELS: props.globalAvailableModels 
+        GLOBAL_AVAILABLE_MODELS: props.globalAvailableModels
           ? JSON.stringify(props.globalAvailableModels)
           : "[]",
         OPENSEARCH_DOMAIN_ENDPOINT: props.openSearchEndpoint || "",
+        // SQL Knowledge Base configuration (optional - required only if using SQL KB feature)
+        BEDROCK_KB_ROLE_ARN: process.env.BEDROCK_KB_ROLE_ARN || "",
+        DEFAULT_MODEL_ARN: `arn:aws:bedrock:${props.bedrockRegion}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`,
         AWS_LAMBDA_EXEC_WRAPPER: "/opt/bootstrap",
         PORT: "8000",
       },

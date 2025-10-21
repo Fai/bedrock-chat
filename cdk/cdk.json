@@ -55,10 +55,7 @@
     "enableFrontendIpv6": true,
     "enableFrontendWaf": true,
     "allowedIpV4AddressRanges": ["0.0.0.0/1", "128.0.0.0/1"],
-    "allowedIpV6AddressRanges": [
-      "0000:0000:0000:0000:0000:0000:0000:0000/1",
-      "8000:0000:0000:0000:0000:0000:0000:0000/1"
-    ],
+    "allowedIpV6AddressRanges": ["::/1", "8000::/1"],
     "allowedCountries": [],
     "identityProviders": [],
     "userPoolDomainPrefix": "",

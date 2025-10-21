@@ -1,9 +1,10 @@
 import React, { ReactNode, cloneElement, ReactElement } from 'react';
 import { BaseProps } from '../@types/common';
 import { Authenticator } from '@aws-amplify/ui-react';
-import { useTranslation } from 'react-i18next';
 import { useAuthenticator } from '@aws-amplify/ui-react';
 import { SocialProvider } from '../@types/auth';
+import CustomerLogo from './CustomerLogo';
+import { BRANDING } from '../constants/branding';
 
 type Props = BaseProps & {
   socialProviders: SocialProvider[];
@@ -11,21 +12,25 @@ type Props = BaseProps & {
 };
 
 const AuthAmplify: React.FC<Props> = ({ socialProviders, children }) => {
-  const { t } = useTranslation();
   const { signOut } = useAuthenticator();
 
   return (
-    <Authenticator
-      socialProviders={socialProviders}
-      components={{
-        Header: () => (
-          <div className="mb-5 mt-10 flex justify-center text-3xl text-aws-font-color-light">
-            {t('app.name')}
-          </div>
-        ),
-      }}>
-      <>{cloneElement(children as ReactElement, { signOut })}</>
-    </Authenticator>
+    <div 
+      className="min-h-screen bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${BRANDING.customer.background.login})` }}
+    >
+      <Authenticator
+        socialProviders={socialProviders}
+        components={{
+          Header: () => (
+            <div className="mb-5 mt-10 flex justify-center">
+              <CustomerLogo variant="full" />
+            </div>
+          ),
+        }}>
+        <>{cloneElement(children as ReactElement, { signOut })}</>
+      </Authenticator>
+    </div>
   );
 };
 

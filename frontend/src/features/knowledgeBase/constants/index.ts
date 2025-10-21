@@ -47,9 +47,79 @@ export const DEFAULT_OPENSEARCH_ANALYZER: {
   zhhant: 'icu',
 } as const;
 
+// S3 Vectors supported regions (preview)
+export const S3_VECTOR_SUPPORTED_REGIONS = [
+  'us-east-1',
+  'us-east-2',
+  'us-west-2',
+  'eu-central-1',
+  'ap-southeast-2',
+] as const;
+
+// S3 Vectors constraints
+export const S3_VECTOR_CONSTRAINTS = {
+  MAX_CHUNK_TOKENS: 500,  // S3 Vectors chunking limitation
+  SEARCH_TYPE: 'semantic' as const,  // Only semantic search supported
+  METADATA_SIZE_LIMIT: 40 * 1024,  // 40KB max metadata per vector
+  FILTERABLE_METADATA_LIMIT: 2 * 1024,  // 2KB filterable metadata
+} as const;
+
+// S3 Vector specific chunk limits (500 token max)
+export const S3_VECTOR_CHUNK_LIMITS = {
+  FIXED_SIZE: {
+    maxTokens: {
+      MAX: 500,  // S3 Vector hard limit
+      MIN: 1,
+      STEP: 1,
+    },
+  },
+  HIERARCHICAL: {
+    maxParentTokenSize: {
+      MAX: 500,
+      MIN: 1,
+      STEP: 1,
+    },
+    maxChildTokenSize: {
+      MAX: 500,
+      MIN: 1,
+      STEP: 1,
+    },
+  },
+  SEMANTIC: {
+    maxTokens: {
+      MAX: 500,
+      MIN: 1,
+      STEP: 1,
+    },
+  },
+} as const;
+
+// Aurora PostgreSQL supported regions (all Aurora regions)
+export const AURORA_POSTGRESQL_SUPPORTED_REGIONS = [
+  'us-east-1', 'us-east-2', 'us-west-1', 'us-west-2',
+  'eu-west-1', 'eu-west-2', 'eu-central-1', 'eu-north-1',
+  'ap-northeast-1', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2',
+  'ap-south-1', 'ca-central-1', 'sa-east-1',
+] as const;
+
+// Aurora PostgreSQL constraints
+export const AURORA_POSTGRESQL_CONSTRAINTS = {
+  MIN_POSTGRES_VERSION: '16.4',  // Required for Bedrock integration
+  MIN_PGVECTOR_VERSION: '0.5.0',  // Required for HNSW indexing
+  REQUIRED_EXTENSIONS: ['pgvector'],
+  REQUIRED_TABLE_SCHEMA: {
+    id: 'UUID PRIMARY KEY',
+    embedding: 'vector(1024)',  // Dimension matches embedding model
+    chunks: 'TEXT NOT NULL',
+    metadata: 'JSONB',
+  },
+} as const;
+
+// Default OpenSearch KB (backward compatible - default storage type)
 export const DEFAULT_BEDROCK_KNOWLEDGEBASE: BedrockKnowledgeBase = {
   knowledgeBaseId: null,
   existKnowledgeBaseId: null,
+  storageType: 'OPENSEARCH_SERVERLESS',  // Default to OpenSearch
   embeddingsModel: 'cohere_multilingual_v3',
   openSearch: OPENSEARCH_ANALYZER['none'],
   chunkingConfiguration: {
@@ -58,6 +128,39 @@ export const DEFAULT_BEDROCK_KNOWLEDGEBASE: BedrockKnowledgeBase = {
   searchParams: {
     maxResults: 20,
     searchType: 'hybrid',
+  },
+};
+
+// S3 Vector KB defaults
+export const DEFAULT_S3_VECTOR_KNOWLEDGEBASE: BedrockKnowledgeBase = {
+  knowledgeBaseId: null,
+  existKnowledgeBaseId: null,
+  storageType: 'S3_VECTOR',
+  embeddingsModel: 'titan_v2',  // Titan V2 recommended for S3 Vectors
+  openSearch: null,  // No OpenSearch for S3 Vectors
+  chunkingConfiguration: {
+    chunkingStrategy: 'default'
+  },
+  searchParams: {
+    maxResults: 5,
+    searchType: 'semantic',  // S3 Vectors only support semantic
+  },
+};
+
+// Aurora PostgreSQL KB defaults
+export const DEFAULT_AURORA_POSTGRESQL_KNOWLEDGEBASE: BedrockKnowledgeBase = {
+  knowledgeBaseId: null,
+  existKnowledgeBaseId: null,
+  storageType: 'AURORA_POSTGRESQL',
+  embeddingsModel: 'titan_v2',  // Titan V2 recommended for Aurora
+  openSearch: null,  // No OpenSearch for Aurora
+  auroraPostgreSQL: null,  // Will be configured during creation
+  chunkingConfiguration: {
+    chunkingStrategy: 'hierarchical'  // Hierarchical works well with Aurora
+  },
+  searchParams: {
+    maxResults: 5,
+    searchType: 'hybrid',  // Aurora supports both semantic and hybrid
   },
 };
 

@@ -2,6 +2,7 @@ import { AVAILABLE_MODEL_KEYS } from '../constants/index';
 
 export interface GlobalConfig {
   globalAvailableModels: string[];
+  bedrockRegion: string;
 }
 
 export interface GetGlobalConfigResponse extends GlobalConfig {}

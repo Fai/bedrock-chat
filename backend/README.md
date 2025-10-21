@@ -28,6 +28,11 @@ export LARGE_MESSAGE_BUCKET=bedrockchatstack-largemessagebucketxxx
 export USER_POOL_ID=xxxxxxxxx
 export CLIENT_ID=xxxxxxxxx
 export OPENSEARCH_DOMAIN_ENDPOINT=https://abcdefghijklmnopqrst.aa-region-1.aoss.amazonaws.com
+
+# SQL Knowledge Base Configuration (Optional - only needed if using SQL KB feature)
+# Get BEDROCK_KB_ROLE_ARN from SqlDatabase stack output or manually create IAM role
+export BEDROCK_KB_ROLE_ARN=arn:aws:iam::123456789012:role/BedrockKnowledgeBaseRedshiftRole
+# DEFAULT_MODEL_ARN is set automatically to claude-3-5-sonnet in the Lambda environment
 ```
 
 - Configure CDK configration.

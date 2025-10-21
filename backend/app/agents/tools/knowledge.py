@@ -5,6 +5,8 @@ from app.agents.tools.agent_tool import AgentTool
 from app.repositories.models.custom_bot import BotModel
 from app.routes.schemas.conversation import type_model_name
 from app.vector_search import search_related_docs
+from app.sql_kb_search import search_sql_knowledge_base
+from app.kb_utils import detect_kb_type
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +17,7 @@ logger.setLevel(logging.INFO)
 
 class KnowledgeToolInput(BaseModel):
     query: str = Field(
-        description="Input suitable for vector search, full text search, and hybrid search. When searching continuously, the query must be designed so that it does not overlap with past contexts."
+        description="A natural language question to search the knowledge base. Use plain English only - NEVER generate SQL queries yourself. Examples: 'What is the price of Yoga Mat?', 'Show me product information'. The system handles all technical query conversion automatically."
     )
 
 
@@ -28,13 +30,17 @@ def search_knowledge(
     logger.info(f"Running AnswerWithKnowledgeTool with query: {query}")
 
     try:
-        search_results = search_related_docs(
-            bot,
-            query=query,
-        )
+        # Detect KB type once
+        kb_type = detect_kb_type(bot)
+        logger.info(f"Detected KB type: {kb_type}")
 
-        # # For testing purpose
-        # search_results = dummy_search_results
+        # Route directly to appropriate search method
+        if kb_type == "SQL":
+            logger.info("Routing to SQL KB search (retrieve_and_generate)")
+            search_results = search_sql_knowledge_base(bot, query=query)
+        else:
+            logger.info("Routing to vector search (retrieve)")
+            search_results = search_related_docs(bot, query=query)
 
         return search_results
 
@@ -47,12 +53,32 @@ def search_knowledge(
 
 
 def create_knowledge_tool(bot: BotModel) -> AgentTool:
-    description = (
-        "Answer a user's question using information. The description is: {}".format(
-            bot.knowledge.__str_in_claude_format__()
+    # Detect KB type using the same logic as search_knowledge
+    is_sql_kb = False
+    if bot.bedrock_knowledge_base:
+        kb_type = detect_kb_type(bot)
+        is_sql_kb = (kb_type == "SQL")
+
+    logger.info(f"Creating knowledge tool - SQL KB: {is_sql_kb}, Has KB: {bot.bedrock_knowledge_base is not None}")
+
+    kb_info = bot.knowledge.__str_in_claude_format__()
+
+    if is_sql_kb:
+        description = (
+            "Retrieve information to answer the user's question. "
+            "IMPORTANT: Provide your query as a simple natural language question in plain English. "
+            "Example: 'What is the price of Yoga Mat?' or 'Air Fryer product information'. "
+            "DO NOT use technical syntax - just ask the question naturally. "
+            "Available information: {}".format(kb_info)
         )
-    )
-    logger.info(f"Creating knowledge base tool with description: {description}")
+        logger.info("Using SQL KB tool description (natural language queries)")
+    else:
+        description = (
+            "Answer a user's question using information. The description is: {}".format(kb_info)
+        )
+        logger.info("Using vector search tool description")
+
+    logger.info(f"Knowledge base tool description: {description}")
     return AgentTool(
         name=f"knowledge_base_tool",
         description=description,

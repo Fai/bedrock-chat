@@ -2,7 +2,7 @@ import {
   Agent,
   AgentInput,
 } from '../features/agent/types';
-import { BedrockKnowledgeBase } from '../features/knowledgeBase/types';
+import { BedrockKnowledgeBase, SqlKnowledgeBase } from '../features/knowledgeBase/types';
 import { Model } from './conversation';
 export type BotKind = 'private' | 'mixed';
 export type SharedScope = 'private' | 'partial' | 'all';
@@ -93,7 +93,7 @@ export type BotDetails = Omit<BotMeta, 'isStarred' | 'owned'> & {
   displayRetrievedChunks: boolean;
   conversationQuickStarters: ConversationQuickStarter[];
   bedrockGuardrails: GuardrailsParams;
-  bedrockKnowledgeBase: BedrockKnowledgeBase;
+  bedrockKnowledgeBase: BedrockKnowledgeBase | SqlKnowledgeBase;
   activeModels: ActiveModels;
 };
 
@@ -123,7 +123,7 @@ export type RegisterBotRequest = {
   promptCachingEnabled: boolean;
   conversationQuickStarters: ConversationQuickStarter[];
   bedrockGuardrails?: GuardrailsParams;
-  bedrockKnowledgeBase?: BedrockKnowledgeBase;
+  bedrockKnowledgeBase?: BedrockKnowledgeBase | SqlKnowledgeBase;
   activeModels: ActiveModels;
 };
 
@@ -140,7 +140,7 @@ export type UpdateBotRequest = {
   promptCachingEnabled: boolean;
   conversationQuickStarters: ConversationQuickStarter[];
   bedrockGuardrails?: GuardrailsParams;
-  bedrockKnowledgeBase?: BedrockKnowledgeBase;
+  bedrockKnowledgeBase?: BedrockKnowledgeBase | SqlKnowledgeBase;
   activeModels: ActiveModels;
 };
 
@@ -154,7 +154,7 @@ export type UpdateBotResponse = {
   displayRetrievedChunks: boolean;
   promptCachingEnabled: boolean;
   conversationQuickStarters: ConversationQuickStarter[];
-  bedrockKnowledgeBase: BedrockKnowledgeBase;
+  bedrockKnowledgeBase: BedrockKnowledgeBase | SqlKnowledgeBase;
   activeModels: ActiveModels;
 };
 

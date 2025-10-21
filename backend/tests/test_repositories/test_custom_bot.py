@@ -1,5 +1,6 @@
 import sys
 import unittest
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, ".")
 
@@ -64,6 +65,49 @@ from tests.test_repositories.utils.bot_factory import (
 
 
 class TestCustomBotRepository(unittest.TestCase):
+    def setUp(self):
+        self.patcher1 = patch("app.repositories.custom_bot.get_bot_table_client")
+        self.patcher2 = patch("app.repositories.custom_bot.get_dynamodb_client")
+        self.mock_get_table_client = self.patcher1.start()
+        self.mock_get_dynamodb_client = self.patcher2.start()
+
+        self.mock_table = MagicMock()
+        self.mock_client = MagicMock()
+        self.mock_get_table_client.return_value = self.mock_table
+        self.mock_get_dynamodb_client.return_value = self.mock_client
+
+        # Store for tracking put items
+        self.stored_items = {}
+
+        def mock_put_item(**kwargs):
+            item = kwargs.get('Item', {})
+            if 'BotId' in item:
+                self.stored_items[item['BotId']] = item
+            return {}
+
+        def mock_query(**kwargs):
+            if 'IndexName' in kwargs and kwargs['IndexName'] == 'BotIdIndex':
+                key_condition = kwargs.get('KeyConditionExpression')
+                # Simple mock - return stored item if exists
+                for bot_id, item in self.stored_items.items():
+                    return {'Items': [item]}
+            return {'Items': []}
+
+        # Mock table operations
+        self.mock_table.put_item.side_effect = mock_put_item
+        self.mock_table.query.side_effect = mock_query
+        self.mock_table.get_item.return_value = {'Item': {}}
+        self.mock_table.scan.return_value = {'Items': []}
+        self.mock_table.update_item.return_value = {}
+        self.mock_table.delete_item.return_value = {}
+        
+        # Mock client operations
+        self.mock_client.batch_get_item.return_value = {'Responses': {}}
+
+    def tearDown(self):
+        self.patcher1.stop()
+        self.patcher2.stop()
+
     def test_store_and_find_bot(self):
         bot = _create_test_bot_model(
             id="1",
@@ -445,9 +489,34 @@ class TestCustomBotRepository(unittest.TestCase):
 
 class TestBotAliasRepository(unittest.TestCase):
     def setUp(self) -> None:
+        self.patcher1 = patch("app.repositories.custom_bot.get_bot_table_client")
+        self.patcher2 = patch("app.repositories.custom_bot.get_dynamodb_client")
+        self.mock_get_table_client = self.patcher1.start()
+        self.mock_get_dynamodb_client = self.patcher2.start()
+
+        self.mock_table = MagicMock()
+        self.mock_client = MagicMock()
+        self.mock_get_table_client.return_value = self.mock_table
+        self.mock_get_dynamodb_client.return_value = self.mock_client
+
+        # Mock table operations
+        self.mock_table.put_item.return_value = {}
+        self.mock_table.get_item.return_value = {'Item': {}}
+        self.mock_table.query.return_value = {'Items': []}
+        self.mock_table.scan.return_value = {'Items': []}
+        self.mock_table.update_item.return_value = {}
+        self.mock_table.delete_item.return_value = {}
+        
+        # Mock client operations
+        self.mock_client.batch_get_item.return_value = {'Responses': {}}
+
         bot1 = create_test_private_bot("1", False, "user1")
         alias1 = BotAliasModel.from_bot_for_initial_alias(bot1)
         store_alias("user2", alias1)
+
+    def tearDown(self):
+        self.patcher1.stop()
+        self.patcher2.stop()
 
     def tearDown(self) -> None:
         delete_alias_by_id("user2", "1")
@@ -472,6 +541,27 @@ class TestBotAliasRepository(unittest.TestCase):
 
 class TestFindAllBots(unittest.TestCase):
     def setUp(self) -> None:
+        self.patcher1 = patch("app.repositories.custom_bot.get_bot_table_client")
+        self.patcher2 = patch("app.repositories.custom_bot.get_dynamodb_client")
+        self.mock_get_table_client = self.patcher1.start()
+        self.mock_get_dynamodb_client = self.patcher2.start()
+
+        self.mock_table = MagicMock()
+        self.mock_client = MagicMock()
+        self.mock_get_table_client.return_value = self.mock_table
+        self.mock_get_dynamodb_client.return_value = self.mock_client
+
+        # Mock table operations
+        self.mock_table.put_item.return_value = {}
+        self.mock_table.get_item.return_value = {'Item': {}}
+        self.mock_table.query.return_value = {'Items': []}
+        self.mock_table.scan.return_value = {'Items': []}
+        self.mock_table.update_item.return_value = {}
+        self.mock_table.delete_item.return_value = {}
+        
+        # Mock client operations
+        self.mock_client.batch_get_item.return_value = {'Responses': {}}
+
         # Bots owned by user1
         bot1 = create_test_private_bot(
             id="1", is_starred=False, owner_user_id="user1", last_used_time=1627984899.9
@@ -521,6 +611,8 @@ class TestFindAllBots(unittest.TestCase):
         update_alias_star_status("user1", alias_for_5.original_bot_id, True)
 
     def tearDown(self) -> None:
+        self.patcher1.stop()
+        self.patcher2.stop()
         delete_bot_by_id("user1", "1")
         delete_bot_by_id("user1", "2")
         delete_bot_by_id("user1", "3")
@@ -581,10 +673,33 @@ class TestFindAllBots(unittest.TestCase):
 
 class TestUpdateBotSharedStatus(unittest.TestCase):
     def setUp(self) -> None:
+        self.patcher1 = patch("app.repositories.custom_bot.get_bot_table_client")
+        self.patcher2 = patch("app.repositories.custom_bot.get_dynamodb_client")
+        self.mock_get_table_client = self.patcher1.start()
+        self.mock_get_dynamodb_client = self.patcher2.start()
+
+        self.mock_table = MagicMock()
+        self.mock_client = MagicMock()
+        self.mock_get_table_client.return_value = self.mock_table
+        self.mock_get_dynamodb_client.return_value = self.mock_client
+
+        # Mock table operations
+        self.mock_table.put_item.return_value = {}
+        self.mock_table.get_item.return_value = {'Item': {}}
+        self.mock_table.query.return_value = {'Items': []}
+        self.mock_table.scan.return_value = {'Items': []}
+        self.mock_table.update_item.return_value = {}
+        self.mock_table.delete_item.return_value = {}
+        
+        # Mock client operations
+        self.mock_client.batch_get_item.return_value = {'Responses': {}}
+
         bot1 = create_test_private_bot("1", is_starred=True, owner_user_id="user1")
         store_bot(bot1)
 
     def tearDown(self) -> None:
+        self.patcher1.stop()
+        self.patcher2.stop()
         delete_bot_by_id("user1", "1")
 
     def test_update_bot_shared_status(self):
@@ -619,6 +734,27 @@ class TestUpdateBotSharedStatus(unittest.TestCase):
 
 class TestRemoveFromRecentlyUsed(unittest.TestCase):
     def setUp(self) -> None:
+        self.patcher1 = patch("app.repositories.custom_bot.get_bot_table_client")
+        self.patcher2 = patch("app.repositories.custom_bot.get_dynamodb_client")
+        self.mock_get_table_client = self.patcher1.start()
+        self.mock_get_dynamodb_client = self.patcher2.start()
+
+        self.mock_table = MagicMock()
+        self.mock_client = MagicMock()
+        self.mock_get_table_client.return_value = self.mock_table
+        self.mock_get_dynamodb_client.return_value = self.mock_client
+
+        # Mock table operations
+        self.mock_table.put_item.return_value = {}
+        self.mock_table.get_item.return_value = {'Item': {}}
+        self.mock_table.query.return_value = {'Items': []}
+        self.mock_table.scan.return_value = {'Items': []}
+        self.mock_table.update_item.return_value = {}
+        self.mock_table.delete_item.return_value = {}
+        
+        # Mock client operations
+        self.mock_client.batch_get_item.return_value = {'Responses': {}}
+
         # Create a bot owned by user1
         self.owned_bot = create_test_private_bot(
             id="owned_bot", is_starred=False, owner_user_id="user1"
@@ -638,6 +774,8 @@ class TestRemoveFromRecentlyUsed(unittest.TestCase):
         update_alias_last_used_time("user1", "shared_bot")  # Ensure it has LastUsedTime
 
     def tearDown(self) -> None:
+        self.patcher1.stop()
+        self.patcher2.stop()
         delete_bot_by_id("user1", "owned_bot")
         delete_bot_by_id("user2", "shared_bot")
         delete_alias_by_id("user1", "shared_bot")

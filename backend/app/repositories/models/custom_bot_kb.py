@@ -8,6 +8,7 @@ from app.routes.schemas.bot_kb import (
     type_os_token_filter,
     type_os_tokenizer,
     type_kb_resource_type,
+    type_kb_storage_type,
 )
 from typing import Self
 from pydantic import BaseModel, validator, model_validator
@@ -75,7 +76,8 @@ class BedrockAgentGetKnowledgeBaseResponse(BaseModel):
 
 class BedrockKnowledgeBaseModel(BaseModel):
     embeddings_model: type_kb_embeddings_model
-    open_search: OpenSearchParamsModel
+    open_search: OpenSearchParamsModel | None = None  # Optional for S3 vector store
+    storage_type: type_kb_storage_type = "OPENSEARCH_SERVERLESS"  # Default to existing behavior
     chunking_configuration: (
         DefaultParamsModel
         | FixedSizeParamsModel
@@ -93,3 +95,58 @@ class BedrockKnowledgeBaseModel(BaseModel):
     web_crawling_filters: WebCrawlingFiltersModel = WebCrawlingFiltersModel(
         exclude_patterns=[], include_patterns=[]
     )
+
+
+# SQL Knowledge Base Models
+class SqlDatabaseConfigModel(BaseModel):
+    """Redshift database configuration model"""
+
+    workgroup_name: str
+    workgroup_arn: str
+    database_name: str
+    table_name: str
+    field_mapping: dict[str, str]
+    secret_arn: str
+    embedding_model_arn: str = "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0"  # Default to Titan v2
+
+
+class SqlKnowledgeBaseModel(BaseModel):
+    """SQL Knowledge Base model for DynamoDB storage"""
+
+    knowledge_base_type: type_kb_resource_type = "SQL"
+    database_config: SqlDatabaseConfigModel
+    search_params: SearchParamsModel
+    embedding_model_arn: str
+    knowledge_base_id: str | None = None
+    data_source_ids: list[str] | None = None
+
+
+# Aurora Vector Knowledge Base Models
+class AuroraVectorConfigModel(BaseModel):
+    """Aurora PostgreSQL pgvector configuration model"""
+
+    cluster_name: str  # Display/logging
+    cluster_arn: str  # arn:aws:rds:...:cluster:...
+    database_name: str  # e.g., "bedrock_kb"
+    table_name: str  # e.g., "bedrock_integration.kb_vectors"
+    secret_arn: str  # Secrets Manager ARN
+    embeddings_model: str = "titan_v2"  # titan_v2, cohere_multilingual_v3
+    embedding_dimensions: int = 1024
+    chunking_configuration: (
+        DefaultParamsModel
+        | FixedSizeParamsModel
+        | HierarchicalParamsModel
+        | SemanticParamsModel
+        | NoneParamsModel
+    )
+    parsing_model: type_kb_parsing_model = "anthropic.claude-3-haiku-v1"
+
+
+class AuroraVectorKnowledgeBaseModel(BaseModel):
+    """Aurora Vector Knowledge Base model for DynamoDB storage"""
+
+    knowledge_base_type: type_kb_resource_type = "AURORA_VECTOR"
+    aurora_config: AuroraVectorConfigModel
+    search_params: SearchParamsModel
+    knowledge_base_id: str | None = None
+    data_source_ids: list[str] | None = None

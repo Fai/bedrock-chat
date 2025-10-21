@@ -810,6 +810,105 @@ const translation: typeof en = {
       title: 'ナレッジの詳細設定',
       description:
         'ナレッジを設定するための埋め込みモデルの選択や、ナレッジとして追加したドキュメントの分割方法などを設定します。ボット作成後の変更はできません。',
+      resourceType: {
+        label: 'ナレッジベースタイプ',
+        hint: 'ベクターベースの文書検索またはSQLデータベースクエリを選択してください。ボット作成後は変更できません。',
+        vector: {
+          label: '文書検索（ベクター）',
+          description: 'アップロードされた文書をセマンティック類似性で検索',
+        },
+        sql: {
+          label: 'SQLデータベース（構造化データ）',
+          description: 'Amazon Redshiftの構造化データを自然言語でクエリ',
+        },
+      },
+      storageType: {
+        label: 'ベクトルストレージタイプ',
+        description:
+          'ベクトル埋め込みのバックエンドストレージを選択してください。ボット作成後は変更できません。',
+        immutable: 'ストレージタイプは作成後に変更できません',
+        openSearchServerless: {
+          title: 'OpenSearch Serverless',
+          description: 'サブミリ秒レイテンシーの本格的なベクトル検索',
+          costLevel: '100万ベクトルあたり約$88/月',
+          features: {
+            latency: 'サブミリ秒のクエリレイテンシー',
+            hybridSearch: 'ハイブリッド検索（セマンティック + キーワード）',
+            chunkSize: '最大8192トークンのチャンク',
+            production: 'SLA付きの本格運用対応',
+            metadata: '完全なメタデータサポート',
+          },
+        },
+        s3Vector: {
+          title: 'S3 Vectors',
+          description: '大規模データセット向けのコスト最適化されたベクトルストレージ',
+          costLevel: '100万ベクトルあたり約$0.13/月',
+          features: {
+            costSavings: 'OpenSearchと比較して99%のコスト削減',
+            largeDatasets: '大規模データセットに最適',
+            devTest: '開発/テストワークロードに適している',
+            quickCreate: 'Quick Create自動プロビジョニング',
+          },
+          limitations: {
+            preview: 'プレビュー機能 - 変更される可能性があります',
+            semanticOnly: 'セマンティック検索のみ（ハイブリッドなし）',
+            chunkLimit: 'チャンクあたり最大500トークン',
+            latency: 'サブ秒レイテンシー（サブミリ秒ではない）',
+          },
+          warning: {
+            previewTitle: 'プレビュー機能',
+            previewDescription:
+              'S3 Vectorsは現在プレビュー中です。開発やテストには適していますが、変更される可能性があり、SLAが保証される本格運用ワークロードには推奨されません。',
+            limitationsTitle: '主な制限事項',
+            limitations: {
+              regional: '地域の可用性: us-east-1、us-east-2、us-west-2、eu-central-1、ap-southeast-2でのみ利用可能',
+              searchType: '検索タイプ: セマンティック検索のみ（ハイブリッド検索なし）',
+              chunking: 'チャンク制限: チャンクあたり最大500トークン（OpenSearchの8192と比較）',
+              latency: 'クエリレイテンシー: サブ秒応答時間（OpenSearchのサブミリ秒と比較）',
+            },
+            bestForTitle: '最適な用途',
+            bestForDescription: '開発・テスト環境、コストに敏感なプロジェクト、大容量データセット、非クリティカルなワークロード',
+          },
+          regionalAvailability:
+            'S3 Vectorsは以下の地域でのみ利用可能です: {{regions}}。現在のBedrockリージョンは{{currentRegion}}です。',
+        },
+        costComparison: {
+          title: 'コスト比較',
+          openSearch: 'OpenSearch Serverless',
+          s3Vectors: 'S3 Vectors',
+          savings: '99%のコスト削減',
+          note: '実際のコストは使用量とAWSの価格設定により異なる場合があります',
+        },
+      },
+      sql: {
+        workgroupName: {
+          label: 'ワークグループ名 *',
+          placeholder: 'my-workgroup',
+          help: 'Redshift Serverlessワークグループの名前',
+        },
+        databaseName: {
+          label: 'データベース名 *',
+          placeholder: 'my_database',
+        },
+        tableName: {
+          label: 'テーブル名 *',
+          placeholder: 'my_table',
+        },
+        secretArn: {
+          label: 'シークレットARN *',
+          placeholder: 'arn:aws:secretsmanager:...',
+          help: 'データベース認証情報を含むAWS Secrets Manager ARN',
+        },
+        fieldMapping: {
+          title: 'フィールドマッピング *',
+          description: 'テーブルの列を必要なフィールドにマップしてください',
+          id: 'ID列',
+          content: 'コンテンツ列',
+          metadata: 'メタデータ列',
+          embedding: '埋め込み列',
+        },
+      },
+      s3VectorLimitation: 'S3 Vector Storeはチャンクサイズが最大500トークンで、セマンティック検索のみをサポートします。',
       embeddingModel: {
         label: '埋め込みモデル',
         titan_v2: {
@@ -820,7 +919,7 @@ const translation: typeof en = {
         },
       },
       chunkingStrategy: {
-        label: 'チャンキング戦略',
+        label: 'チャンキング戦略（ベクターKBのみ）',
         default: {
           label: 'デフォルトチャンキング',
           hint: 'チャンクに自動的に分割します。各チャンクは最大 300 トークンです。ドキュメントに含まれるトークンが 300 未満である場合、それ以上分割されません。',
@@ -871,8 +970,8 @@ const translation: typeof en = {
         hint: '文間にブレークポイントを描画するための文の距離/類似性のパーセンタイルしきい値を設定します。',
       },
       opensearchAnalyzer: {
-        label: 'アナライザー（トークナイズ・正規化）',
-        hint: 'ナレッジに登録した文書のトークナイズや正規化を行うアナライザーを指定します。 適切なアナライザーを選択することで、検索精度が向上します。 ナレッジの言語に合わせて、最適なアナライザーを選択してください。',
+        label: 'アナライザー（OpenSearch Serverlessのみ）',
+        hint: 'OpenSearchインデックス用のテキスト解析を設定します。この設定はOpenSearch Serverlessストレージにのみ適用され、S3 Vectorストレージでは使用されません。最適な検索精度のために、ナレッジの言語に合ったアナライザーを選択してください。',
         icu: {
           label: 'ICU analyzer',
           hint: 'トークナイズは {{tokenizer}} を利用し、正規化は {{normalizer}} を利用します。',
@@ -891,7 +990,7 @@ const translation: typeof en = {
         not_specified: '指定なし',
       },
       advancedParsing: {
-        label: '高度なドキュメント解析機能',
+        label: '高度なドキュメント解析機能（ベクターKBのみ）',
         description:
           'ドキュメントの高度なドキュメント解析機能に使用するモデルを選択してください。',
         hint: '構造が損なわれていないPDF内の表など、サポートされている文書形式の標準テキスト以外の解析に適しています。生成AIを使用した解析のために追加のコストが発生します。',

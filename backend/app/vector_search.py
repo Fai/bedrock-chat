@@ -122,11 +122,16 @@ def _bedrock_knowledge_base_search(bot: BotModel, query: str) -> list[SearchResu
             knowledge_base_id=knowledge_base_id
         )
         # Check the knowledge base resource type
-        if (
-            knowledge_base_info.knowledge_base.knowledge_base_configuration.type
-            == "KENDRA"
-        ):
+        kb_type = knowledge_base_info.knowledge_base.knowledge_base_configuration.type
+
+        if kb_type == "KENDRA":
             # Omit overrideSearchType option when the type is "KENDRA"
+            omit_override_search_type_parameter(retrieve_parameter)
+        elif kb_type == "SQL":
+            # For SQL Knowledge Bases, Bedrock automatically uses text-to-SQL
+            # Keep vectorSearchConfiguration but Bedrock will use SQL instead
+            logger.info(f"SQL Knowledge Base detected: {knowledge_base_id}")
+            # SQL KBs ignore vector search config and use text-to-SQL automatically
             omit_override_search_type_parameter(retrieve_parameter)
 
         # Send retrieve request
@@ -203,4 +208,10 @@ def _bedrock_knowledge_base_search(bot: BotModel, query: str) -> list[SearchResu
 
 
 def search_related_docs(bot: BotModel, query: str) -> list[SearchResult]:
+    """
+    Search vector/semantic knowledge base using retrieve API.
+
+    Note: This function handles only VECTOR knowledge bases.
+    For SQL knowledge bases, use search_sql_knowledge_base from sql_kb_search.py
+    """
     return _bedrock_knowledge_base_search(bot, query)
