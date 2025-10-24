@@ -464,10 +464,15 @@ class ToolResultContentModelBody(BaseModel):
         )
 
     def to_tool_result_for_converse(self) -> ToolResultBlockTypeDef:
+        content_blocks = [content.to_content_for_converse() for content in self.content]
+        # AWS Bedrock requires content field to be present and non-empty
+        if not content_blocks:
+            content_blocks = [{"text": ""}]  # Provide empty text as fallback
+        
         return {
             "toolUseId": self.tool_use_id,
             "status": self.status,
-            "content": [content.to_content_for_converse() for content in self.content],
+            "content": content_blocks,
         }
 
     def to_tool_result_content_body(self) -> ToolResultContentBody:
