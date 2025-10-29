@@ -27,8 +27,11 @@ from app.repositories.s3_vector_kb import (
     get_s3_vector_kb_info,
 )
 from app.repositories.models.custom_bot_kb import (
-    ChunkingConfigurationModel,
-    EmbeddingsModel,
+    DefaultParamsModel,
+    FixedSizeParamsModel,
+    HierarchicalParamsModel,
+    SemanticParamsModel,
+    NoneParamsModel,
 )
 
 

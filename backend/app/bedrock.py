@@ -107,6 +107,12 @@ REGIONAL_INFERENCE_PROFILES = {
             "ap-southeast-2": "apac",
         }
     },
+    "claude-v3.7-sonnet": {
+        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
+    },
+    "claude-v3.5-haiku": {
+        "supported_regions": {"us-east-1": "us", "us-east-2": "us", "us-west-2": "us"}
+    },
     "claude-v3-haiku": {
         "supported_regions": {
             "us-east-1": "us",
