@@ -124,6 +124,11 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
   enableAgentCoreMemory: z.boolean().default(true),
   enableAgentCoreObservability: z.boolean().default(true),
 
+  // Monitoring and alerting configuration
+  enableMonitoring: z.boolean().default(false),
+  alertEmail: z.string().email().optional(),
+  enableDetailedMonitoring: z.boolean().default(false),
+
   // debug parameter
   devAccessIamRoleArn: z.string().default("")
 });
@@ -258,6 +263,9 @@ export function resolveBedrockChatParameters(
     enableAgentCore: app.node.tryGetContext("enableAgentCore"),
     enableAgentCoreMemory: app.node.tryGetContext("enableAgentCoreMemory"),
     enableAgentCoreObservability: app.node.tryGetContext("enableAgentCoreObservability"),
+    enableMonitoring: app.node.tryGetContext("enableMonitoring"),
+    alertEmail: app.node.tryGetContext("alertEmail"),
+    enableDetailedMonitoring: app.node.tryGetContext("enableDetailedMonitoring"),
     devAccessIamRoleArn: app.node.tryGetContext("devAccessIamRoleArn"),
   };
 

@@ -29,6 +29,7 @@ import { BotStore, Language } from "./constructs/bot-store";
 import { AuroraKnowledgeBase } from "./constructs/aurora-kb";
 import { Duration } from "aws-cdk-lib";
 import { AgentCore } from "./constructs/agentcore";
+import { Monitoring } from "./constructs/monitoring";
 
 export interface BedrockChatStackProps extends StackProps {
   readonly envName: string;
@@ -64,6 +65,11 @@ export interface BedrockChatStackProps extends StackProps {
   readonly enableAgentCore?: boolean;
   readonly enableAgentCoreMemory?: boolean;
   readonly enableAgentCoreObservability?: boolean;
+  
+  // Monitoring configuration
+  readonly enableMonitoring?: boolean;
+  readonly alertEmail?: string;
+  readonly enableDetailedMonitoring?: boolean;
 }
 
 export class BedrockChatStack extends cdk.Stack {
@@ -235,6 +241,23 @@ export class BedrockChatStack extends cdk.Stack {
         openSearchEndpoint: botStore?.openSearchEndpoint,
         enableMemory: props.enableAgentCoreMemory ?? true,
         enableObservability: props.enableAgentCoreObservability ?? true,
+      });
+    }
+
+    // Optional monitoring and alerting for AgentCore migration
+    let monitoring = undefined;
+    if (props.enableMonitoring) {
+      const dynamoTableNames = [
+        database.table.tableName,
+        ...(agentCore ? [agentCore.runtimeTableName, agentCore.memoryTableName].filter(Boolean) : [])
+      ];
+
+      monitoring = new Monitoring(this, "Monitoring", {
+        envPrefix: props.envPrefix,
+        alertEmail: props.alertEmail,
+        lambdaFunctionArn: api.handler.functionArn,
+        dynamoTableNames,
+        enableDetailedMonitoring: props.enableDetailedMonitoring ?? false,
       });
     }
 
