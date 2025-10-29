@@ -43,6 +43,7 @@ export interface ApiProps {
   readonly enableLambdaSnapStart: boolean;
   readonly openSearchEndpoint?: string;
   readonly globalAvailableModels?: string[];
+  readonly bedrockKbRoleArn?: string;
 }
 
 export class Api extends Construct {
@@ -228,6 +229,22 @@ export class Api extends Construct {
     props.usageAnalysis?.ddbBucket.grantRead(handlerRole);
     props.largeMessageBucket.grantReadWrite(handlerRole);
 
+    // Add PassRole permission for Bedrock Knowledge Base
+    if (props.bedrockKbRoleArn) {
+      handlerRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["iam:PassRole"],
+          resources: [props.bedrockKbRoleArn],
+          conditions: {
+            StringEquals: {
+              "iam:PassedToService": "bedrock.amazonaws.com",
+            },
+          },
+        })
+      );
+    }
+
     const handler = new PythonFunction(this, "HandlerV2", {
       entry: path.join(__dirname, "../../../backend"),
       index: "app/main.py",
@@ -268,9 +285,9 @@ export class Api extends Construct {
           ? JSON.stringify(props.globalAvailableModels)
           : "[]",
         OPENSEARCH_DOMAIN_ENDPOINT: props.openSearchEndpoint || "",
-        // SQL Knowledge Base configuration (optional - required only if using SQL KB feature)
-        BEDROCK_KB_ROLE_ARN: process.env.BEDROCK_KB_ROLE_ARN || "",
-        DEFAULT_MODEL_ARN: `arn:aws:bedrock:${props.bedrockRegion}::foundation-model/anthropic.claude-3-5-sonnet-20241022-v2:0`,
+        // Bedrock Knowledge Base role ARN for S3 Vector KB operations
+        BEDROCK_KB_ROLE_ARN: props.bedrockKbRoleArn || "",
+        DEFAULT_MODEL_ARN: `arn:aws:bedrock:${props.bedrockRegion}::inference-profile/us.anthropic.claude-3-5-sonnet-20241022-v2:0`,
         AWS_LAMBDA_EXEC_WRAPPER: "/opt/bootstrap",
         PORT: "8000",
       },

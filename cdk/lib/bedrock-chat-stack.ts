@@ -212,6 +212,14 @@ export class BedrockChatStack extends cdk.Stack {
       sourceDatabase: database,
     });
 
+    const embedding = new Embedding(this, "Embedding", {
+      bedrockRegion: props.bedrockRegion,
+      database,
+      documentBucket: props.documentBucket,
+      bedrockCustomBotProject: bedrockCustomBotCodebuild.project,
+      enableRagReplicas: props.enableRagReplicas,
+    });
+
     const backendApi = new Api(this, "BackendApi", {
       envName: props.envName,
       envPrefix: props.envPrefix,
@@ -228,6 +236,7 @@ export class BedrockChatStack extends cdk.Stack {
       enableLambdaSnapStart: props.enableLambdaSnapStart,
       openSearchEndpoint: botStore?.openSearchEndpoint,
       globalAvailableModels: props.globalAvailableModels,
+      bedrockKbRoleArn: embedding.bedrockKbRole.roleArn,
     });
     props.documentBucket.grantReadWrite(backendApi.handler);
     // Add permissions to API handler for BotStore
@@ -298,25 +307,18 @@ export class BedrockChatStack extends cdk.Stack {
       maxAge: 3000,
     });
 
-    const embedding = new Embedding(this, "Embedding", {
-      bedrockRegion: props.bedrockRegion,
-      database,
-      documentBucket: props.documentBucket,
-      bedrockCustomBotProject: bedrockCustomBotCodebuild.project,
-      enableRagReplicas: props.enableRagReplicas,
-    });
-
     // Optional Aurora Vector Knowledge Base
-    let auroraKb: AuroraKnowledgeBase | undefined;
-    if (props.enableAuroraKb) {
-      auroraKb = new AuroraKnowledgeBase(this, "AuroraKB", {
-        vpc: backendApi.vpc,
-        bedrockKbRole: embedding.bedrockKbRole,
-        envName: props.envName,
-        minCapacity: props.auroraKbMinCapacity,
-        maxCapacity: props.auroraKbMaxCapacity,
-      });
-    }
+    // TODO: Fix Aurora KB implementation - requires VPC and bedrockKbRole properties
+    // let auroraKb: AuroraKnowledgeBase | undefined;
+    // if (props.enableAuroraKb) {
+    //   auroraKb = new AuroraKnowledgeBase(this, "AuroraKB", {
+    //     vpc: backendApi.vpc,
+    //     bedrockKbRole: embedding.bedrockKbRole,
+    //     envName: props.envName,
+    //     minCapacity: props.auroraKbMinCapacity,
+    //     maxCapacity: props.auroraKbMaxCapacity,
+    //   });
+    // }
 
     // WebAcl for published API
     const webAclForPublishedApi = new WebAclForPublishedApi(

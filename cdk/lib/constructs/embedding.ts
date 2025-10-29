@@ -30,6 +30,7 @@ export interface EmbeddingProps {
 
 export class Embedding extends Construct {
   readonly removalHandler: IFunction;
+  readonly bedrockKbRole: iam.Role;
   private _updateSyncStatusHandler: IFunction;
   private _fetchStackOutputHandler: IFunction;
   private _StoreKnowledgeBaseIdHandler: IFunction;
@@ -41,12 +42,58 @@ export class Embedding extends Construct {
   constructor(scope: Construct, id: string, props: EmbeddingProps) {
     super(scope, id);
 
+    this.bedrockKbRole = this.createBedrockKbRole(props);
+
     this.setupStateMachineHandlers(props)
       .setupStateMachine(props)
       .setupEventBridgePipe(props)
       .setupRemovalHandler(props);
 
     this.removalHandler = this._removalHandler;
+  }
+
+  private createBedrockKbRole(props: EmbeddingProps): iam.Role {
+    const role = new iam.Role(this, "BedrockKbRole", {
+      assumedBy: new iam.ServicePrincipal("bedrock.amazonaws.com"),
+    });
+
+    // S3 permissions for document access
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "s3:GetObject",
+          "s3:ListBucket",
+        ],
+        resources: [
+          props.documentBucket.bucketArn,
+          `${props.documentBucket.bucketArn}/*`,
+        ],
+      })
+    );
+
+    // Bedrock permissions for Knowledge Base operations
+    role.addToPolicy(
+      new iam.PolicyStatement({
+        actions: [
+          "bedrock:CreateKnowledgeBase",
+          "bedrock:GetKnowledgeBase",
+          "bedrock:ListKnowledgeBases",
+          "bedrock:UpdateKnowledgeBase",
+          "bedrock:DeleteKnowledgeBase",
+          "bedrock:CreateDataSource",
+          "bedrock:GetDataSource",
+          "bedrock:ListDataSources",
+          "bedrock:UpdateDataSource",
+          "bedrock:DeleteDataSource",
+          "bedrock:StartIngestionJob",
+          "bedrock:GetIngestionJob",
+          "bedrock:ListIngestionJobs",
+        ],
+        resources: ["*"],
+      })
+    );
+
+    return role;
   }
 
   private setupStateMachineHandlers(props: EmbeddingProps): this {

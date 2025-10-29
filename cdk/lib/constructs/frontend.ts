@@ -239,7 +239,11 @@ export class Frontend extends Construct {
           commands: ["npm ci"],
         },
       ],
-      buildCommands: ["npm run build"],
+      buildCommands: [
+        // Generate config.js with runtime configuration
+        `echo "window.APP_CONFIG = ${JSON.stringify(buildEnvProps)};" > public/config.js`,
+        "npm run build"
+      ],
       buildEnvironment: buildEnvProps,
       destinationBucket: this.assetBucket,
       distribution: this.cloudFrontWebDistribution,
