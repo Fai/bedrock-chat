@@ -524,13 +524,74 @@ The Lambda handler now has access to:
 
 ---
 
-### ⏳ Phase 2.4: Handle Bedrock Agent Tool
-**Status:** ⏳ PENDING
+### ✅ Phase 2.4: Handle Bedrock Agent Tool
+**Date Completed:** 2025-10-29
+**Status:** ✅ COMPLETED
 
-**Implementation Plan:**
-- Model as nested Strands agent using "agents-as-tools" pattern
-- Create sub-agent wrapper for Bedrock Agent invocations
-- Preserve trace log formatting for UI display
+**Changes Made:**
+
+1. **Strands Nested Agent Tool** (`backend/app/agents/strands/tools/bedrock_agent_tool.py`):
+   - ✅ Created `StrandsBedrockAgent` wrapper class for agents-as-tools pattern
+   - ✅ Implemented `create_bedrock_agent_tool()` with Strands `@tool` decorator format
+   - ✅ Added `get_bedrock_agent_tools()` helper for bot tool collection
+   - ✅ Preserved trace log formatting for UI compatibility
+   - ✅ Maintained session management and streaming response handling
+   - ✅ Comprehensive error handling and logging
+
+2. **Agents-as-Tools Pattern:**
+   - **Nested Agents:** Models Bedrock Agents as Strands sub-agents
+   - **Session Management:** Maintains conversation continuity with session IDs
+   - **Trace Preservation:** Keeps trace logs for UI display and debugging
+   - **Streaming Support:** Handles chunked responses from Bedrock Agents
+   - **Error Resilience:** Graceful fallback when agent invocation fails
+
+3. **Comprehensive Unit Tests** (`backend/tests/test_agents_strands_bedrock_agent_tool.py`):
+   - ✅ 15+ test cases covering all functionality
+   - ✅ Tests initialization, invocation, error handling
+   - ✅ Tests trace log preservation and session management
+   - ✅ Mock-based testing for Bedrock Agent client isolation
+   - ✅ Edge cases (missing agent IDs, empty responses)
+
+**Key Features:**
+
+1. **Hierarchical Agent Architecture:**
+   - Primary Strands agent can invoke nested Bedrock Agents
+   - Maintains agent hierarchy and delegation patterns
+   - Preserves agent-specific configurations and capabilities
+
+2. **Session Continuity:**
+   - Auto-generates session IDs when not provided
+   - Maintains conversation context across agent invocations
+   - Supports multi-turn conversations with nested agents
+
+3. **Trace Log Preservation:**
+   - Captures and preserves Bedrock Agent trace logs
+   - Maintains UI compatibility for trace display
+   - Includes agent metadata for debugging and monitoring
+
+4. **Strands Integration:**
+   - Ready for `@tool` decorator when dependencies available
+   - Compatible result format for Strands consumption
+   - Proper function signatures for tool registration
+
+**Integration Points:**
+- Compatible with existing `AgentModel` and Bedrock Agent configuration
+- Maintains current trace log format for UI display
+- Ready for integration with `StrandsAgentWrapper`
+- Preserves existing agent invocation patterns
+
+**Testing Coverage:**
+- Agent wrapper initialization and configuration
+- Successful agent invocation with streaming responses
+- Error handling and fallback scenarios
+- Trace log preservation and metadata handling
+- Tool creation and enablement scenarios
+
+**Migration Benefits:**
+- **Simplified Architecture:** Unified agent framework with nested capabilities
+- **Enhanced Debugging:** Preserved trace logs for better observability
+- **Improved Reliability:** Better error handling and session management
+- **Future-Ready:** Prepared for multi-agent collaboration patterns
 
 ---
 
