@@ -156,7 +156,10 @@ export const DEFAULT_AURORA_POSTGRESQL_KNOWLEDGEBASE: BedrockKnowledgeBase = {
   openSearch: null,  // No OpenSearch for Aurora
   auroraPostgreSQL: null,  // Will be configured during creation
   chunkingConfiguration: {
-    chunkingStrategy: 'hierarchical'  // Hierarchical works well with Aurora
+    chunkingStrategy: 'hierarchical',  // Hierarchical works well with Aurora
+    overlapTokens: 60,
+    maxParentTokenSize: 1536,
+    maxChildTokenSize: 300
   },
   searchParams: {
     maxResults: 5,

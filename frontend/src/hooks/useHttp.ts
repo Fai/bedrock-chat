@@ -1,10 +1,11 @@
 import { fetchAuthSession } from 'aws-amplify/auth';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import useSWR, { SWRConfiguration } from 'swr';
+import { API_ENDPOINT } from '../utils/config';
 // import useAlertSnackbar from "./useAlertSnackbar";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_APP_API_ENDPOINT,
+  baseURL: API_ENDPOINT,
 });
 
 // // HTTP Request Preprocessing
