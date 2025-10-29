@@ -12,3 +12,10 @@ memory-bank
 
 # Development notes and scratchpads
 SCRATCHPAD.md
+
+# Amazon Q CLI files
+.amazonq/
+
+# Analysis and assessment documents
+COST_IMPACT_ANALYSIS.md
+WELL_ARCHITECTED_ASSESSMENT.md
