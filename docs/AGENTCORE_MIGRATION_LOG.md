@@ -369,16 +369,66 @@ The Lambda handler now has access to:
 
 ---
 
-### ⏳ Phase 2.2: Port Knowledge Base Tool
-**Status:** ⏳ PENDING
+### ✅ Phase 2.2: Port Knowledge Base Tool
+**Date Completed:** 2025-10-29
+**Status:** ✅ COMPLETED
 
-**Planned File:** `backend/app/agents/strands/tools/knowledge_tool.py`
+**Changes Made:**
 
-**Implementation Plan:**
-- Convert to Strands `@tool` decorator format
-- Reuse existing `vector_search.py` and `sql_kb_search.py` logic
-- Return structured results compatible with Strands
-- Support both semantic and hybrid search modes
+1. **Strands Knowledge Tool** (`backend/app/agents/strands/tools/knowledge_tool.py`):
+   - ✅ Created `create_knowledge_tool()` function with Strands `@tool` decorator format
+   - ✅ Supports both vector search (OpenSearch) and SQL knowledge bases
+   - ✅ Reuses existing `search_related_docs()` and `search_sql_knowledge_base()` logic
+   - ✅ Automatic KB type detection via `detect_kb_type()`
+   - ✅ Proper result formatting for Strands compatibility
+   - ✅ Comprehensive error handling and logging
+   - ✅ `get_knowledge_tools()` helper for bot tool collection
+
+2. **Knowledge Base Support:**
+   - **Vector Search (OpenSearch):** Uses existing `search_related_docs()` for semantic search
+   - **SQL Knowledge Base:** Uses existing `search_sql_knowledge_base()` for text-to-SQL queries
+   - **Hybrid Search:** Automatically routes based on KB type detection
+   - **Result Formatting:** Converts to Strands-compatible format with content, source, metadata
+
+3. **Comprehensive Unit Tests** (`backend/tests/test_agents_strands_knowledge_tool.py`):
+   - ✅ 15+ test cases covering all functionality
+   - ✅ Tests vector search, SQL search, error handling
+   - ✅ Tests result formatting and tool creation
+   - ✅ Mock-based testing for dependency isolation
+   - ✅ Edge cases (empty results, missing metadata)
+
+**Key Features:**
+
+1. **Dual KB Support:**
+   - Vector KB: Natural language semantic search
+   - SQL KB: Text-to-SQL with natural language queries
+   - Automatic routing based on KB configuration
+
+2. **Strands Integration:**
+   - Ready for `@tool` decorator when dependencies available
+   - Compatible result format for Strands agent consumption
+   - Proper function signature for tool registration
+
+3. **Error Resilience:**
+   - Graceful error handling with informative messages
+   - Fallback responses for search failures
+   - Comprehensive logging for debugging
+
+4. **Result Quality:**
+   - Preserves source attribution and metadata
+   - Maintains ranking information
+   - Handles missing fields with sensible defaults
+
+**Integration Points:**
+- Reuses existing vector search and SQL KB infrastructure
+- Compatible with current `BotModel` and knowledge base schemas
+- Ready for integration with `StrandsAgentWrapper` in Phase 2.5
+
+**Testing Coverage:**
+- Vector search scenarios (success, failure, empty results)
+- SQL search scenarios with natural language queries
+- Error handling and edge cases
+- Result formatting and metadata preservation
 
 ---
 
