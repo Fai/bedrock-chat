@@ -11,6 +11,7 @@ import { Construct } from "constructs";
 
 export interface DatabaseProps {
   pointInTimeRecovery?: boolean;
+  envName?: string;
 }
 
 export class Database extends Construct {
@@ -22,6 +23,9 @@ export class Database extends Construct {
   constructor(scope: Construct, id: string, props?: DatabaseProps) {
     super(scope, id);
 
+    const isProd = props?.envName === 'prod';
+    const removalPolicy = isProd ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY;
+
     // Conversation Table
     const conversationTable = new Table(this, "ConversationTableV3", {
       // PK: UserId
@@ -29,9 +33,9 @@ export class Database extends Construct {
       // SK: ConversationId
       sortKey: { name: "SK", type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy,
       stream: StreamViewType.NEW_IMAGE,
-      pointInTimeRecovery: props?.pointInTimeRecovery,
+      pointInTimeRecovery: props?.pointInTimeRecovery ?? isProd,
       encryption: TableEncryption.AWS_MANAGED,
     });
     conversationTable.addGlobalSecondaryIndex({
@@ -47,7 +51,7 @@ export class Database extends Construct {
       // SK: ItemType
       sortKey: { name: "SK", type: AttributeType.STRING },
       billingMode: BillingMode.PAY_PER_REQUEST,
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy,
       stream: StreamViewType.NEW_IMAGE,
       // Need to enable PITR for bot table for Zero-ETL pipeline
       pointInTimeRecovery: true,

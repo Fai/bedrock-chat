@@ -6,15 +6,15 @@ bedrockChatParams.set("default", {
   bedrockRegion: "us-east-1",
   enableFrontendIpv6: true,
   enableFrontendWaf: true,
-  allowedIpV4AddressRanges: ["0.0.0.0/1", "128.0.0.0/1"],
+  allowedIpV4AddressRanges: ["10.0.0.0/8", "172.16.0.0/12"], // Restrict to private networks
   allowedIpV6AddressRanges: ["::/1", "8000::/1"],
   allowedCountries: ["TH"],
-  allowedSignUpEmailDomains: [],
+  allowedSignUpEmailDomains: ["company.com"], // Restrict to company domain
   autoJoinUserGroups: ["CreatingBotAllowed"],
   userPoolDomainPrefix: "",
   identityProviders: [],
-  selfSignUpEnabled: false,
-  publishedApiAllowedIpV4AddressRanges: ["0.0.0.0/1", "128.0.0.0/1"],
+  selfSignUpEnabled: false, // Disable self-signup for security
+  publishedApiAllowedIpV4AddressRanges: ["10.0.0.0/8", "172.16.0.0/12"],
   publishedApiAllowedIpV6AddressRanges: [
       "0000:0000:0000:0000:0000:0000:0000:0000/1",
       "8000:0000:0000:0000:0000:0000:0000:0000/1"
@@ -26,11 +26,13 @@ bedrockChatParams.set("default", {
   enableBotStoreReplicas: false,
   botStoreLanguage: "en",
   globalAvailableModels: [
-      "claude-v3.7-sonnet",
+      "claude-v3-haiku",
+      "claude-v3.5-sonnet", 
       "amazon-nova-pro",
       "amazon-nova-lite",
+      "amazon-nova-micro"
   ],  
-  tokenValidMinutes: 30,
+  tokenValidMinutes: 15, // Reduce token validity for security
   alternateDomainName: "",
   hostedZoneId: "",
   enableAuroraKb: false,  // Disabled by default
@@ -51,8 +53,11 @@ bedrockChatParams.set("dev", {
 
 bedrockChatParams.set("prod", {
   bedrockRegion: "us-east-1",
-  allowedIpV4AddressRanges: ["0.0.0.0/1", "128.0.0.0/1"],
+  allowedIpV4AddressRanges: ["10.0.0.0/8", "172.16.0.0/12"], // Restrict to private networks
+  allowedSignUpEmailDomains: ["company.com"], // Company domain only
+  selfSignUpEnabled: false, // Disable self-signup in production
   enableLambdaSnapStart: true,
   enableRagReplicas: true, // Enhanced availability for production
   enableBotStoreReplicas: true, // Enhanced availability for production
+  tokenValidMinutes: 10, // Shorter token validity in production
 });

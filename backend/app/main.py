@@ -1,6 +1,7 @@
 import logging
 import os
 import traceback
+import uuid
 from typing import Callable
 
 from app.dependencies import get_current_user
@@ -28,6 +29,7 @@ from pydantic import ValidationError
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp, Message
+import json
 
 
 CORS_ALLOW_ORIGINS = os.environ.get("CORS_ALLOW_ORIGINS", "*")
@@ -35,7 +37,12 @@ PUBLISHED_API_ID = os.environ.get("PUBLISHED_API_ID", None)
 
 is_published_api = PUBLISHED_API_ID is not None
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s - %(message)s")
+# Configure structured logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s"}',
+    datefmt="%Y-%m-%dT%H:%M:%S"
+)
 logger = logging.getLogger(__name__)
 
 if not is_published_api:
@@ -83,10 +90,25 @@ app.add_middleware(
 
 
 def error_handler_factory(status_code: int) -> Callable[[Request, Exception], Response]:
-    def error_handler(_: Request, exc: Exception) -> JSONResponse:
-        logger.error(exc)
-        logger.error("".join(traceback.format_tb(exc.__traceback__)))
-        return JSONResponse({"errors": [str(exc)]}, status_code=status_code)
+    def error_handler(request: Request, exc: Exception) -> JSONResponse:
+        correlation_id = getattr(request.state, 'correlation_id', str(uuid.uuid4()))
+        error_details = {
+            "correlation_id": correlation_id,
+            "error_type": type(exc).__name__,
+            "message": str(exc),
+            "path": request.url.path,
+            "method": request.method
+        }
+        
+        logger.error(json.dumps({
+            **error_details,
+            "traceback": "".join(traceback.format_tb(exc.__traceback__))
+        }))
+        
+        return JSONResponse({
+            "errors": [error_details["message"]],
+            "correlation_id": correlation_id
+        }, status_code=status_code)
 
     return error_handler  # type: ignore
 
@@ -101,6 +123,16 @@ app.add_exception_handler(PermissionError, error_handler_factory(403))
 app.add_exception_handler(ValidationError, error_handler_factory(422))
 app.add_exception_handler(ResourceConflictError, error_handler_factory(409))
 app.add_exception_handler(Exception, error_handler_factory(500))
+
+
+@app.middleware("http")
+async def add_correlation_id(request: Request, call_next: ASGIApp):
+    correlation_id = request.headers.get("X-Correlation-ID", str(uuid.uuid4()))
+    request.state.correlation_id = correlation_id
+    
+    response = await call_next(request)  # type: ignore
+    response.headers["X-Correlation-ID"] = correlation_id
+    return response
 
 
 @app.middleware("http")
@@ -134,13 +166,25 @@ def add_current_user_to_request(request: Request, call_next: ASGIApp):
 
 @app.middleware("http")
 async def add_log_requests(request: Request, call_next: ASGIApp):
-    logger.info(f"Request path: {request.url.path}")
-    logger.info(f"Request method: {request.method}")
-    logger.info(f"Request headers: {request.headers}")
-
-    body = await request.body()
-    logger.info(f"Request body: {body.decode('utf-8')[:100]}...")
+    correlation_id = getattr(request.state, 'correlation_id', str(uuid.uuid4()))
+    
+    logger.info(json.dumps({
+        "correlation_id": correlation_id,
+        "event": "request_start",
+        "path": request.url.path,
+        "method": request.method,
+        "user_agent": request.headers.get("user-agent", ""),
+        "ip": request.client.host if request.client else ""
+    }))
 
     response = await call_next(request)  # type: ignore
+    
+    logger.info(json.dumps({
+        "correlation_id": correlation_id,
+        "event": "request_end",
+        "status_code": response.status_code,
+        "path": request.url.path,
+        "method": request.method
+    }))
 
     return response
