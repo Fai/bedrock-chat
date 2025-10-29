@@ -913,8 +913,118 @@ Runtime Registry System
 
 ## Phase 4: Feature Parity & Testing (Weeks 4-5)
 
-### ⏳ Phase 4.1: Update Chat Use Case
-**Status:** ⏳ PENDING
+### ✅ Phase 4.1: Update Chat Use Case
+**Date Completed:** 2025-10-29
+**Status:** ✅ COMPLETED
+
+**Changes Made:**
+
+1. **Chat Router** (`backend/app/usecases/chat_router.py`):
+   - ✅ Created `route_chat_request()` function for AgentCore/legacy routing
+   - ✅ Feature flag integration with `is_agentcore_enabled()`
+   - ✅ Automatic fallback to legacy implementation on errors
+   - ✅ Maintains full backward compatibility
+   - ✅ Streaming callback adaptation for Strands format
+
+2. **Conversation Storage Adapter** (`backend/app/adapters/conversation_adapter.py`):
+   - ✅ Created `ConversationStorageAdapter` class
+   - ✅ Converts Strands `ChatOutput` to existing `MessageModel` format
+   - ✅ Handles related documents and content adaptation
+   - ✅ Streaming chunk adaptation for different content types
+   - ✅ Maintains database schema compatibility
+
+3. **Streaming Protocol Adapter** (`backend/app/adapters/streaming_adapter.py`):
+   - ✅ Created `StreamingProtocolAdapter` class
+   - ✅ Adapts Strands streaming callbacks to legacy format
+   - ✅ Handles text streaming, tool usage, and reasoning content
+   - ✅ Maintains frontend streaming expectations
+   - ✅ Optional callback handling for flexibility
+
+4. **Integration Tests** (`backend/tests/test_integration_chat_routing.py`):
+   - ✅ 15+ test cases covering all integration scenarios
+   - ✅ Tests chat routing with feature flags
+   - ✅ Tests fallback mechanisms and error handling
+   - ✅ Tests adapter functionality and compatibility
+   - ✅ Mock-based testing for component isolation
+
+**Key Features:**
+
+1. **Seamless Routing:**
+   - Automatic routing based on AgentCore feature flag
+   - Graceful fallback to legacy on Strands failures
+   - No changes required to existing API endpoints
+   - Maintains all existing functionality
+
+2. **Backward Compatibility:**
+   - Preserves existing `ChatOutput` schema
+   - Maintains conversation storage format
+   - Compatible with existing frontend expectations
+   - No breaking changes to API contracts
+
+3. **Gradual Rollout:**
+   - Feature flag controlled migration
+   - Per-bot enablement capability (future enhancement)
+   - Safe rollback mechanism
+   - Production-ready error handling
+
+4. **Adapter Pattern:**
+   - Clean separation between Strands and legacy formats
+   - Reusable adapters for different integration points
+   - Extensible for future enhancements
+   - Testable component isolation
+
+**Integration Architecture:**
+
+```
+Chat Request Flow
+├── route_chat_request() (router)
+├── Feature Flag Check
+├── AgentCore Enabled?
+│   ├── Yes → Strands Orchestrator
+│   │   ├── StreamingProtocolAdapter
+│   │   └── ConversationStorageAdapter
+│   └── No → Legacy Chat Implementation
+└── ChatOutput (unified format)
+```
+
+**Migration Benefits:**
+
+1. **Risk Mitigation:**
+   - Zero-downtime migration capability
+   - Automatic fallback on failures
+   - Feature flag controlled rollout
+   - Comprehensive error handling
+
+2. **Operational Excellence:**
+   - Maintains existing monitoring and logging
+   - Compatible with current deployment processes
+   - No infrastructure changes required
+   - Preserves existing performance characteristics
+
+3. **Developer Experience:**
+   - No API changes for frontend developers
+   - Existing tests continue to work
+   - Clear separation of concerns
+   - Easy debugging and troubleshooting
+
+**Testing Coverage:**
+- Chat routing with feature flags enabled/disabled
+- Fallback scenarios and error handling
+- Conversation storage adapter functionality
+- Streaming protocol adapter compatibility
+- Integration between all components
+
+**Integration Points:**
+- Uses existing chat endpoint infrastructure
+- Compatible with current authentication and authorization
+- Maintains existing conversation storage patterns
+- Ready for production deployment
+
+**Notes:**
+- Implementation maintains 100% backward compatibility
+- Ready for gradual rollout with feature flags
+- Comprehensive error handling and logging
+- Prepared for bot-specific enablement in future phases
 
 ---
 
