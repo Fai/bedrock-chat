@@ -98,8 +98,7 @@ def create_s3_vector_knowledge_base(
                 },
             },
             storageConfiguration={
-                "type": "S3_VECTORS",  # Correct type for S3 Vectors
-                "s3VectorsConfiguration": s3_vectors_config
+                "type": "S3_VECTORS"
             },
         )
 
@@ -170,19 +169,20 @@ def create_s3_vector_knowledge_base(
 
 def _get_embeddings_model_arn(model_name: str) -> str:
     """
-    Map embeddings model name to Bedrock ARN
+    Map embeddings model name to Bedrock inference profile ARN for better performance
 
     Args:
         model_name: Model name from type_kb_embeddings_model
 
     Returns:
-        Full Bedrock model ARN
+        Bedrock inference profile ARN
     """
     region = os.getenv("BEDROCK_REGION", "us-east-1")
 
+    # Use inference profiles for better throughput and cross-region routing
     model_map = {
-        "titan_v2": f"arn:aws:bedrock:{region}::foundation-model/amazon.titan-embed-text-v2:0",
-        "cohere_multilingual_v3": f"arn:aws:bedrock:{region}::foundation-model/cohere.embed-multilingual-v3",
+        "titan_v2": f"arn:aws:bedrock:{region}::inference-profile/us.amazon.titan-embed-text-v2:0",
+        "cohere_multilingual_v3": f"arn:aws:bedrock:{region}::inference-profile/us.cohere.embed-multilingual-v3",
     }
 
     return model_map.get(model_name, model_map["titan_v2"])

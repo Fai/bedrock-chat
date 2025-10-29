@@ -151,7 +151,7 @@ class SqlDatabaseConfig(BaseSchema):
     field_mapping: dict[str, str] = Field(
         ...,
         description="Field mapping for Bedrock KB (id, content, metadata)",
-        example={"id": "record_id", "content": "searchable_text", "metadata": "metadata"},
+        json_schema_extra={"example": {"id": "record_id", "content": "searchable_text", "metadata": "metadata"}},
     )
     secret_arn: str = Field(
         ..., description="AWS Secrets Manager ARN with Redshift credentials"
