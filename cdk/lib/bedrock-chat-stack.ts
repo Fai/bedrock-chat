@@ -28,6 +28,7 @@ import { BedrockCustomBotCodebuild } from "./constructs/bedrock-custom-bot-codeb
 import { BotStore, Language } from "./constructs/bot-store";
 import { AuroraKnowledgeBase } from "./constructs/aurora-kb";
 import { Duration } from "aws-cdk-lib";
+import { AgentCore } from "./constructs/agentcore";
 
 export interface BedrockChatStackProps extends StackProps {
   readonly envName: string;
@@ -57,9 +58,12 @@ export interface BedrockChatStackProps extends StackProps {
   readonly hostedZoneId?: string;
   readonly devAccessIamRoleArn?: string;
   readonly allowedCountries?: string[];
-  readonly enableAuroraKb: boolean;
-  readonly auroraKbMinCapacity: number;
-  readonly auroraKbMaxCapacity: number;
+  readonly enableAuroraKb?: boolean;
+  readonly auroraKbMinCapacity?: number;
+  readonly auroraKbMaxCapacity?: number;
+  readonly enableAgentCore?: boolean;
+  readonly enableAgentCoreMemory?: boolean;
+  readonly enableAgentCoreObservability?: boolean;
 }
 
 export class BedrockChatStack extends cdk.Stack {
@@ -220,6 +224,20 @@ export class BedrockChatStack extends cdk.Stack {
       enableRagReplicas: props.enableRagReplicas,
     });
 
+    // AgentCore infrastructure for Strands agent framework (optional)
+    let agentCore = undefined;
+    if (props.enableAgentCore) {
+      agentCore = new AgentCore(this, "AgentCore", {
+        database,
+        envName: props.envName,
+        envPrefix: props.envPrefix,
+        bedrockRegion: props.bedrockRegion,
+        openSearchEndpoint: botStore?.openSearchEndpoint,
+        enableMemory: props.enableAgentCoreMemory ?? true,
+        enableObservability: props.enableAgentCoreObservability ?? true,
+      });
+    }
+
     const backendApi = new Api(this, "BackendApi", {
       envName: props.envName,
       envPrefix: props.envPrefix,
@@ -237,6 +255,7 @@ export class BedrockChatStack extends cdk.Stack {
       openSearchEndpoint: botStore?.openSearchEndpoint,
       globalAvailableModels: props.globalAvailableModels,
       bedrockKbRoleArn: embedding.bedrockKbRole.roleArn,
+      agentCore,
     });
     props.documentBucket.grantReadWrite(backendApi.handler);
     // Add permissions to API handler for BotStore

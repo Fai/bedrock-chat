@@ -108,6 +108,9 @@ const chat = new BedrockChatStack(
     enableAuroraKb: params.enableAuroraKb,
     auroraKbMinCapacity: params.auroraKbMinCapacity,
     auroraKbMaxCapacity: params.auroraKbMaxCapacity,
+    enableAgentCore: params.enableAgentCore,
+    enableAgentCoreMemory: params.enableAgentCoreMemory,
+    enableAgentCoreObservability: params.enableAgentCoreObservability,
   }
 );
 if (waf) {
