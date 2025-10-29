@@ -28,6 +28,12 @@ reretry = "^0.11.8"
 mypy = "^1.15.0"
 black = "^24.8.0"
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests as integration tests",
+    "performance: marks tests as performance tests"
+]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
