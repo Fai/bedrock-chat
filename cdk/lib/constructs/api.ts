@@ -26,6 +26,7 @@ import { UsageAnalysis } from "./usage-analysis";
 import { excludeDockerImage } from "../constants/docker";
 import { PythonFunction } from "@aws-cdk/aws-lambda-python-alpha";
 import { Database } from "./database";
+import { AgentCore } from "./agentcore";
 
 export interface ApiProps {
   readonly database: Database;
@@ -44,6 +45,7 @@ export interface ApiProps {
   readonly openSearchEndpoint?: string;
   readonly globalAvailableModels?: string[];
   readonly bedrockKbRoleArn?: string;
+  readonly agentCore?: AgentCore;
 }
 
 export class Api extends Construct {
@@ -245,6 +247,60 @@ export class Api extends Construct {
       );
     }
 
+    // Add AgentCore permissions (if AgentCore is enabled)
+    if (props.agentCore) {
+      // Grant permissions to invoke and manage AgentCore runtimes
+      handlerRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: [
+            "bedrock-agentcore:InvokeAgentRuntime",
+            "bedrock-agentcore:CreateAgentRuntime",
+            "bedrock-agentcore:UpdateAgentRuntime",
+            "bedrock-agentcore:DeleteAgentRuntime",
+            "bedrock-agentcore:GetAgentRuntime",
+            "bedrock-agentcore:ListAgentRuntimes",
+          ],
+          resources: ["*"],
+        })
+      );
+
+      // Grant access to AgentCore tables
+      props.agentCore.agentRuntimeTable.grantReadWriteData(handlerRole);
+      if (props.agentCore.agentMemoryTable) {
+        props.agentCore.agentMemoryTable.grantReadWriteData(handlerRole);
+      }
+
+      // Grant CodeBuild permissions to trigger agent container builds
+      handlerRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["codebuild:StartBuild", "codebuild:BatchGetBuilds"],
+          resources: [props.agentCore.agentBuildProject.projectArn],
+        })
+      );
+
+      // Grant PassRole permission for AgentCore runtime execution
+      handlerRole.addToPolicy(
+        new iam.PolicyStatement({
+          effect: iam.Effect.ALLOW,
+          actions: ["iam:PassRole"],
+          resources: [props.agentCore.runtimeExecutionRole.roleArn],
+          conditions: {
+            StringEquals: {
+              "iam:PassedToService": [
+                "bedrock-agentcore.amazonaws.com",
+                "ecs-tasks.amazonaws.com",
+              ],
+            },
+          },
+        })
+      );
+
+      // Grant ECR permissions to read image information
+      props.agentCore.agentContainerRepository.grantRead(handlerRole);
+    }
+
     const handler = new PythonFunction(this, "HandlerV2", {
       entry: path.join(__dirname, "../../../backend"),
       index: "app/main.py",
@@ -287,6 +343,13 @@ export class Api extends Construct {
         OPENSEARCH_DOMAIN_ENDPOINT: props.openSearchEndpoint || "",
         // Bedrock Knowledge Base role ARN for S3 Vector KB operations
         BEDROCK_KB_ROLE_ARN: props.bedrockKbRoleArn || "",
+        // AgentCore configuration (for Strands agent framework)
+        AGENTCORE_ENABLED: props.agentCore ? "true" : "false",
+        AGENTCORE_RUNTIME_TABLE_NAME: props.agentCore?.agentRuntimeTable.tableName || "",
+        AGENTCORE_MEMORY_TABLE_NAME: props.agentCore?.agentMemoryTable?.tableName || "",
+        AGENTCORE_CONTAINER_REPOSITORY_URI: props.agentCore?.agentContainerRepository.repositoryUri || "",
+        AGENTCORE_BUILD_PROJECT_NAME: props.agentCore?.agentBuildProject.projectName || "",
+        AGENTCORE_RUNTIME_EXECUTION_ROLE_ARN: props.agentCore?.runtimeExecutionRole.roleArn || "",
         DEFAULT_MODEL_ARN: `arn:aws:bedrock:${props.bedrockRegion}::inference-profile/us.anthropic.claude-3-5-sonnet-20241022-v2:0`,
         AWS_LAMBDA_EXEC_WRAPPER: "/opt/bootstrap",
         PORT: "8000",
