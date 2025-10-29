@@ -327,6 +327,7 @@ def _get_embeddings_model_arn(model_name: str) -> str:
     model_map = {
         "titan_v2": f"arn:aws:bedrock:{region}::foundation-model/amazon.titan-embed-text-v2:0",
         "cohere_multilingual_v3": f"arn:aws:bedrock:{region}::foundation-model/cohere.embed-multilingual-v3",
+        "amazon_nova_embed_text_v1": f"arn:aws:bedrock:{region}::foundation-model/amazon.nova-embed-text-v1:0",
     }
 
     return model_map.get(model_name, model_map["titan_v2"])

@@ -183,6 +183,7 @@ def _get_embeddings_model_arn(model_name: str) -> str:
     model_map = {
         "titan_v2": f"arn:aws:bedrock:{region}::inference-profile/us.amazon.titan-embed-text-v2:0",
         "cohere_multilingual_v3": f"arn:aws:bedrock:{region}::inference-profile/us.cohere.embed-multilingual-v3",
+        "amazon_nova_embed_text_v1": f"arn:aws:bedrock:{region}::foundation-model/amazon.nova-embed-text-v1:0",
     }
 
     return model_map.get(model_name, model_map["titan_v2"])
@@ -201,6 +202,7 @@ def _get_embedding_dimensions(model_name: str) -> int:
     dimensions_map = {
         "titan_v2": 1024,  # Titan Embeddings V2
         "cohere_multilingual_v3": 1024,  # Cohere Multilingual V3
+        "amazon_nova_embed_text_v1": 1024,  # Amazon Nova Embed Text V1
     }
 
     return dimensions_map.get(model_name, 1024)

@@ -1485,6 +1485,54 @@ Month 3+:  Phase 7 - Deprecation & Cleanup
 
 ---
 
+## 🔍 MONITORING & ALERTING IMPLEMENTATION
+
+**Implementation Date:** 2025-10-29  
+**Status:** ✅ COMPLETED  
+**Purpose:** Production monitoring for A/B testing and migration rollout
+
+### Components Implemented
+
+#### 1. **CloudWatch Monitoring Construct** (`cdk/lib/constructs/monitoring.ts`)
+- **Dashboard:** Real-time AgentCore migration progress visualization
+- **Metrics Collection:** Lambda errors, DynamoDB throttles, custom AgentCore metrics
+- **SNS Alerts:** Email notifications for high error rates and performance issues
+- **A/B Testing Metrics:** Migration ratio tracking (AgentCore vs Legacy usage %)
+
+#### 2. **Monitoring Service** (`backend/app/services/monitoring.py`)
+- **Request Tracking:** `record_chat_request()` for implementation comparison
+- **Tool Usage Metrics:** Individual tool performance and error rates
+- **Multi-Agent Metrics:** Orchestration pattern usage and success rates
+- **Duration Measurement:** Context manager for operation timing
+- **Singleton Pattern:** Global monitoring instance with convenience functions
+
+#### 3. **Stack Integration** (Optional Service)
+- **Feature Flag:** `enableMonitoring` parameter (disabled by default)
+- **Configuration:** Optional alert email and detailed monitoring
+- **Seamless Integration:** Works with existing AgentCore infrastructure
+- **Zero Impact:** No performance overhead when disabled
+
+### Monitoring Capabilities
+
+| Metric Category | Metrics Collected | Purpose |
+|----------------|-------------------|---------|
+| **Migration Progress** | AgentCore vs Legacy usage ratio | Track rollout progress |
+| **Performance** | Request duration, error rates | Compare implementations |
+| **Tool Usage** | Individual tool success/failure | Identify bottlenecks |
+| **Multi-Agent** | Pattern usage, agent coordination | Advanced capabilities monitoring |
+| **Infrastructure** | Lambda errors, DynamoDB throttles | System health |
+
+### Configuration Example
+
+```typescript
+// Enable monitoring in CDK
+enableMonitoring: true,
+alertEmail: "team@example.com",
+enableDetailedMonitoring: true
+```
+
+---
+
 ## 🎯 MIGRATION PROGRESS SUMMARY
 
 **Migration Start Date:** 2025-10-29  

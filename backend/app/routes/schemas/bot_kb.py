@@ -11,7 +11,7 @@ type_kb_chunking_strategy = Literal[
     "semantic",
     "none",
 ]
-type_kb_embeddings_model = Literal["titan_v2", "cohere_multilingual_v3"]
+type_kb_embeddings_model = Literal["titan_v2", "cohere_multilingual_v3", "amazon_nova_embed_text_v1"]
 type_kb_search_type = Literal["hybrid", "semantic"]
 type_kb_parsing_model = Literal[
     "anthropic.claude-3-5-sonnet-v1",
