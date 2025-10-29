@@ -49,6 +49,10 @@ bedrockChatParams.set("dev", {
   enableAuroraKb: true,  // Enable for development testing
   auroraKbMinCapacity: 0.5,  // Minimum for cost savings
   auroraKbMaxCapacity: 2,    // Lower max for dev
+  // AgentCore - Enable for testing Strands agent framework migration
+  enableAgentCore: true,
+  enableAgentCoreMemory: true,
+  enableAgentCoreObservability: true,
 });
 
 bedrockChatParams.set("prod", {

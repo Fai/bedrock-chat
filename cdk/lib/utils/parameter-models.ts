@@ -119,6 +119,11 @@ const BedrockChatParametersSchema = BaseParametersSchema.extend({
   auroraKbMinCapacity: z.number().default(0.5),
   auroraKbMaxCapacity: z.number().default(4),
 
+  // AgentCore and Strands agent framework configuration
+  enableAgentCore: z.boolean().default(false),
+  enableAgentCoreMemory: z.boolean().default(true),
+  enableAgentCoreObservability: z.boolean().default(true),
+
   // debug parameter
   devAccessIamRoleArn: z.string().default("")
 });
@@ -250,6 +255,9 @@ export function resolveBedrockChatParameters(
     enableAuroraKb: app.node.tryGetContext("enableAuroraKb"),
     auroraKbMinCapacity: app.node.tryGetContext("auroraKbMinCapacity"),
     auroraKbMaxCapacity: app.node.tryGetContext("auroraKbMaxCapacity"),
+    enableAgentCore: app.node.tryGetContext("enableAgentCore"),
+    enableAgentCoreMemory: app.node.tryGetContext("enableAgentCoreMemory"),
+    enableAgentCoreObservability: app.node.tryGetContext("enableAgentCoreObservability"),
     devAccessIamRoleArn: app.node.tryGetContext("devAccessIamRoleArn"),
   };
 
