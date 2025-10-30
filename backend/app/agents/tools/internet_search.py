@@ -55,21 +55,13 @@ Content: {content}
 
 Summary:"""
 
-        response = client.invoke_model(
-            modelId="us.anthropic.claude-3-haiku-20240307-v1:0",
-            contentType="application/json",
-            accept="application/json",
-            body=json.dumps(
-                {
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 800,
-                    "messages": [{"role": "user", "content": prompt}],
-                }
-            ),
+        response = client.converse(
+            modelId="anthropic.claude-3-haiku-20240307-v1:0",
+            messages=[{"role": "user", "content": [{"text": prompt}]}],
+            inferenceConfig={"maxTokens": 800}
         )
 
-        response_body = json.loads(response["body"].read())
-        summary = response_body["content"][0]["text"].strip()
+        summary = response["output"]["message"]["content"][0]["text"].strip()
 
         logger.info(
             f"Summarized content from {len(content)} chars to {len(summary)} chars"
