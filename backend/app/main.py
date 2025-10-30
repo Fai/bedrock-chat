@@ -16,6 +16,7 @@ from app.routes.bot import router as bot_router
 from app.routes.bot_store import router as bot_store_router
 from app.routes.conversation import router as conversation_router
 from app.routes.global_config import router as global_config_router
+from app.routes.model_validation import router as model_validation_router
 from app.routes.published_api import router as published_api_router
 from app.routes.user import router as user_router
 from app.routes.sql_kb import router as sql_kb_router
@@ -75,6 +76,7 @@ if not is_published_api:
     app.include_router(user_router)
     app.include_router(bot_store_router)
     app.include_router(global_config_router)
+    app.include_router(model_validation_router)
     app.include_router(sql_kb_router)
 else:
     app.include_router(published_api_router)

@@ -17,6 +17,8 @@ from app.routes.schemas.conversation import type_model_name
 from app.utils import get_bedrock_runtime_client
 from botocore.exceptions import ClientError
 from reretry import retry
+from app.model_validation import validate_model_availability
+from app.monitoring import track_bedrock_call, track_token_usage
 
 if TYPE_CHECKING:
     from app.agents.tools.agent_tool import AgentTool
@@ -834,15 +836,26 @@ def compose_args_for_converse_api(
 def call_converse_api(
     args: ConverseStreamRequestTypeDef,
 ) -> ConverseResponseTypeDef:
-    client = get_bedrock_runtime_client()
-    try:
-        return client.converse(**args)
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "ThrottlingException":
-            raise BedrockThrottlingException(
-                "Bedrock API is throttling requests"
-            ) from e
-        raise
+    # Extract model from args for monitoring
+    model_id = args.get("modelId", "unknown")
+    model = next((k for k, v in BASE_MODEL_IDS.items() if v in model_id), "unknown")
+    
+    with track_bedrock_call(model):
+        client = get_bedrock_runtime_client()
+        try:
+            response = client.converse(**args)
+            
+            # Track token usage if available
+            if "usage" in response:
+                track_token_usage(model, response["usage"])
+                
+            return response
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ThrottlingException":
+                raise BedrockThrottlingException(
+                    "Bedrock API is throttling requests"
+                ) from e
+            raise
 
 
 def calculate_price(
@@ -924,6 +937,10 @@ def get_model_id(
     base_model_id = BASE_MODEL_IDS.get(model)
     if not base_model_id:
         raise ValueError(f"Unsupported model: {model}")
+
+    # Validate model availability in target region
+    if not validate_model_availability(model, bedrock_region):
+        logger.warning(f"Model {model} may not be available in region {bedrock_region}")
 
     if enable_cross_region:
         # 1. First, try to use global inference profile if available

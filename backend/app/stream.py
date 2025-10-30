@@ -8,6 +8,7 @@ from app.bedrock import (
     calculate_price,
     compose_args_for_converse_api,
 )
+from app.monitoring import track_bedrock_call, track_token_usage
 from app.repositories.models.conversation import (
     ContentModel,
     MessageModel,
@@ -214,14 +215,16 @@ class ConverseApiStreamHandler:
             logger.info(f"args for converse_stream: {args}")
 
             client = get_bedrock_runtime_client()
-            try:
-                response = client.converse_stream(**args)
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "ThrottlingException":
-                    raise BedrockThrottlingException(
-                        "Bedrock API is throttling requests"
-                    ) from e
-                raise
+            
+            with track_bedrock_call(self.model):
+                try:
+                    response = client.converse_stream(**args)
+                except ClientError as e:
+                    if e.response["Error"]["Code"] == "ThrottlingException":
+                        raise BedrockThrottlingException(
+                            "Bedrock API is throttling requests"
+                        ) from e
+                    raise
 
             current_message = _PartialMessage(
                 role="assistant",
@@ -353,6 +356,9 @@ class ConverseApiStreamHandler:
                     output_token_count = usage["outputTokens"]
                     cache_read_input_count = usage.get("cacheReadInputTokens") or 0
                     cache_write_input_count = usage.get("cacheWriteInputTokens") or 0
+                    
+                    # Track token usage metrics
+                    track_token_usage(self.model, usage)
 
                 elif "modelStreamErrorException" in event:
                     exception = event["modelStreamErrorException"]
